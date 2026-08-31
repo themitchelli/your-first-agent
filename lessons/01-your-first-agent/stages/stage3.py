@@ -1,17 +1,8 @@
-"""Your first agent, complete: stage 3 plus memory (stage 4).
+"""Stage 3: hands that change things, with permission.
 
-An agent is four things: a model, tools, memory, and a trigger.
-
-  Model   - the LLM we call over the API (Claude Haiku: cheap, fast, plenty)
-  Tools   - four functions scoped to ONE folder on your machine
-  Memory  - memory.md, read at the start, updated by the agent at the end
-  Trigger - you: python agent.py <folder> "<task>"
-
-Run:  python agent.py demo "Organise this folder: rename the files sensibly,
-      group them into subfolders, and tell me what's in it"
-
-Built stage by stage in the "Build your first agent" post; the stages/ folder
-holds the file as it stands after each stage.
+Run:  python stage3.py demo "Rename the worst-named file in this folder to something sensible"
+Expected: the agent reads files, picks a victim, and asks y/n before renaming.
+Say n on a second run and confirm it respects the refusal.
 """
 
 import pathlib
@@ -114,21 +105,12 @@ def main():
     workspace = pathlib.Path(sys.argv[1])
     task = sys.argv[2]
     client = anthropic.Anthropic()
-
-    memory_path = workspace / "memory.md"
-    memory = memory_path.read_text() if memory_path.exists() else "(no memory yet - first run)"
-    system = (
-        "You are a careful file assistant working inside one folder. "
-        "Use your tools to complete the task. When finished, use write_file to update "
-        "'memory.md' with a short note on what you did and learned, then summarise for the user."
-    )
-    messages = [{"role": "user", "content": f"Your memory from previous runs:\n{memory}\n\nToday's task: {task}"}]
+    messages = [{"role": "user", "content": task}]
 
     for _ in range(20):                     # safety cap: a confused agent can't loop forever
         response = client.messages.create(
             model="claude-haiku-4-5",
             max_tokens=4096,
-            system=system,
             tools=TOOLS,
             messages=messages,
         )
