@@ -1,22 +1,17 @@
-"""Your first agent, on a schedule.
+"""Your first agent, with two seams so a harness can plug in.
 
-Lesson 01's agent plus three changes, so it can run when nobody is watching:
+Identical to post 4's agent.py (lessons/04-hands-and-memory) except for two changes, marked SEAM:
 
-  1. --auto-approve   the clock can't type y, so this flag says yes for it
-                      (safe_path still fences every change inside the folder)
-  2. reports/         each run writes a dated report next to this file,
-                      outside the folder the agent can edit
-  3. run.sh           what the scheduler actually runs (run.bat on Windows)
+  1. The model is a parameter, not hardcoded.
+  2. Approval is a function you pass in. People get ask_human (type y);
+     the harness passes one that always says yes and counts the approvals.
 
-Run by hand, as before:   python agent.py demo "Organise this folder"
-Run as the clock would:   python agent.py demo "Organise this folder" --auto-approve
+Run it yourself exactly as before:
+  python agent.py demo "Organise this folder into subfolders"
 """
 
-import datetime
 import pathlib
 import sys
-
-AUTO_APPROVE = "--auto-approve" in sys.argv
 
 def list_files(workspace):
     lines = []
@@ -35,23 +30,19 @@ def safe_path(workspace, name):
 def read_file(workspace, name):
     return safe_path(workspace, name).read_text()
 
-def allowed(question):
-    if AUTO_APPROVE:
-        print(f"  {question} auto-approved")
-        return True
-    answer = input(f"\n  {question} [y/n] ")
-    return answer.strip().lower() == "y"
+def ask_human(question):
+    return input(f"\n  {question} [y/n] ").strip().lower() == "y"
 
-def write_file(workspace, name, content):
-    if not allowed(f"Agent wants to write '{name}' - allow?"):
+def write_file(workspace, name, content, approve):          # SEAM 2: approve is passed in
+    if not approve(f"Agent wants to write '{name}' - allow?"):
         return "The user declined this write."
     path = safe_path(workspace, name)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content)
     return f"Wrote {name}."
 
-def move_file(workspace, name, new_name):
-    if not allowed(f"Agent wants to move '{name}' -> '{new_name}' - allow?"):
+def move_file(workspace, name, new_name, approve):
+    if not approve(f"Agent wants to move '{name}' -> '{new_name}' - allow?"):
         return "The user declined this move."
     src = safe_path(workspace, name)
     dst = safe_path(workspace, new_name)
@@ -102,26 +93,24 @@ TOOLS = [
     },
 ]
 
-def run_tool(workspace, name, args):
+def run_tool(workspace, name, args, approve):
     try:
         if name == "list_files":
             return list_files(workspace)
         if name == "read_file":
             return read_file(workspace, args["name"])
         if name == "write_file":
-            return write_file(workspace, args["name"], args["content"])
+            return write_file(workspace, args["name"], args["content"], approve)
         if name == "move_file":
-            return move_file(workspace, args["name"], args["new_name"])
+            return move_file(workspace, args["name"], args["new_name"], approve)
         return f"Unknown tool: {name}"
     except Exception as error:
         return f"Error: {error}"
 
-def main():
-    args = [a for a in sys.argv[1:] if a != "--auto-approve"]
-    workspace = pathlib.Path(args[0])
-    task = args[1]
-    report = [f"# Run at {datetime.datetime.now():%Y-%m-%d %H:%M}", f"Task: {task}", ""]
+def run(workspace, task, model="claude-haiku-4-5", approve=ask_human, quiet=False):
+    """Run the agent once. Returns what a harness needs to know about the run."""
     client = anthropic.Anthropic()
+    stats = {"input_tokens": 0, "output_tokens": 0, "tool_calls": 0}
 
     memory_path = workspace / "memory.md"
     memory = memory_path.read_text() if memory_path.exists() else "(no memory yet - first run)"
@@ -134,36 +123,36 @@ def main():
 
     for _ in range(20):                     # safety cap: a confused agent can't loop forever
         response = client.messages.create(
-            model="claude-haiku-4-5",
+            model=model,                    # SEAM 1: the model is a parameter
             max_tokens=4096,
             system=system,
             tools=TOOLS,
             messages=messages,
         )
+        stats["input_tokens"] += response.usage.input_tokens
+        stats["output_tokens"] += response.usage.output_tokens
         for block in response.content:
-            if block.type == "text" and block.text.strip():
+            if block.type == "text" and block.text.strip() and not quiet:
                 print(f"\n{block.text}")
-                report.append(block.text)
         if response.stop_reason != "tool_use":
             break                           # no more tool requests: the agent is done
         messages.append({"role": "assistant", "content": response.content})
         results = []
         for block in response.content:
             if block.type == "tool_use":
-                print(f"  [tool] {block.name}")
-                report.append(f"- tool: {block.name} {block.input}")
+                stats["tool_calls"] += 1
+                if not quiet:
+                    print(f"  [tool] {block.name}")
                 results.append({
                     "type": "tool_result",
                     "tool_use_id": block.id,
-                    "content": run_tool(workspace, block.name, block.input),
+                    "content": run_tool(workspace, block.name, block.input, approve),
                 })
         messages.append({"role": "user", "content": results})
+    return stats
 
-    reports = pathlib.Path(__file__).parent / "reports"
-    reports.mkdir(exist_ok=True)
-    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}.md"
-    report_path.write_text("\n".join(report) + "\n")
-    print(f"\nReport written to {report_path}")
+def main():
+    run(pathlib.Path(sys.argv[1]), sys.argv[2])
 
 if __name__ == "__main__":        # run only when started directly, not when imported by a test
     main()
