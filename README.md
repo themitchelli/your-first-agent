@@ -12,6 +12,7 @@ Each lesson folder is the complete, working project as it stands at the end of t
 |---|---|---|
 | 1 | [`lessons/01-your-first-agent`](lessons/01-your-first-agent) | The whole agent in one file you can read in ten minutes |
 | 2+ | coming | Memory and a schedule; structure when the code earns it; production |
+| 5 | [`lessons/05-swap-the-model`](lessons/05-swap-the-model) | A tiny harness: same agent, three models, scored on the result (`python harness.py`) |
 
 ## Setup
 
