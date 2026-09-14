@@ -16,7 +16,7 @@ Each lesson folder is the complete, working project as it stands at the end of t
 
 ## Setup
 
-Python 3.9+ and an Anthropic API key ([console.anthropic.com](https://console.anthropic.com), about £5 of credit is plenty). An API key is separate from a Claude subscription — even subscribers need to create one.
+Python 3.10+ (the anthropic package requires it) and an Anthropic API key ([console.anthropic.com](https://console.anthropic.com), about £5 of credit is plenty). An API key is separate from a Claude subscription; even subscribers need to create one.
 
 ```bash
 pip install anthropic
