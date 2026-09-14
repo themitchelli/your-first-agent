@@ -2,3 +2,4 @@
 __pycache__/
 lessons/*/demo/memory.md
 .env
+lessons/*/reports/

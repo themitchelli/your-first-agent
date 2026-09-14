@@ -1,0 +1,6 @@
+Invoice #4821
+Greenline Web Hosting Ltd
+Date: 12 March 2026
+Amount due: £14.99
+Service: annual domain renewal (example-site.co.uk)
+Paid by card ending 4402
