@@ -15,15 +15,6 @@ def list_files(workspace):
             lines.append(f"{rel}  ({path.stat().st_size} bytes)")
     return "\n".join(lines) or "(the folder is empty)"
 
-def safe_path(workspace, name):
-    path = (workspace / name).resolve()
-    if not path.is_relative_to(workspace.resolve()):
-        raise ValueError(f"'{name}' is outside the workspace - refused")
-    return path
-
-def read_file(workspace, name):
-    return safe_path(workspace, name).read_text()
-
 import anthropic
 
 TOOLS = [
@@ -69,4 +60,5 @@ def main():
                 })
         messages.append({"role": "user", "content": results})
 
-main()
+if __name__ == "__main__":        # run only when started directly, not when imported by a test
+    main()

@@ -3,6 +3,9 @@
 Run:  python stage3.py demo "Rename the worst-named file in this folder to something sensible"
 Expected: the agent reads files, picks a victim, and asks y/n before renaming.
 Say n on a second run and confirm it respects the refusal.
+
+Also try the security test (it should FAIL, on purpose):
+  python -c "import pathlib, stage3; stage3.read_file(pathlib.Path('demo'), '../stage3.py')"
 """
 
 import pathlib
@@ -131,4 +134,5 @@ def main():
                 })
         messages.append({"role": "user", "content": results})
 
-main()
+if __name__ == "__main__":        # run only when started directly, not when imported by a test
+    main()

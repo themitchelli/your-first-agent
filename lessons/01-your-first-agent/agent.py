@@ -149,4 +149,5 @@ def main():
                 })
         messages.append({"role": "user", "content": results})
 
-main()
+if __name__ == "__main__":        # run only when started directly, not when imported by a test
+    main()
