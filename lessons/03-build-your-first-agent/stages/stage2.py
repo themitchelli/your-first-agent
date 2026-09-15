@@ -34,12 +34,14 @@ def main():
     workspace = pathlib.Path(sys.argv[1])
     task = sys.argv[2]
     client = anthropic.Anthropic()
+    system = "You are a careful file assistant working inside one folder. Use your tools to complete the task."
     messages = [{"role": "user", "content": task}]
 
     for _ in range(20):                     # safety cap: a confused agent can't loop forever
         response = client.messages.create(
             model="claude-haiku-4-5",
             max_tokens=4096,
+            system=system,
             tools=TOOLS,
             messages=messages,
         )

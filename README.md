@@ -2,7 +2,7 @@
 
 A course that builds a real AI agent from a single readable Python file up to something you'd trust to run on a schedule. Companion code for the "Your First Agent" series on [stevesaidiaries.com](https://stevesaidiaries.com).
 
-An agent is four things: a **model** (the LLM), **tools** (functions that let it act on your machine), **memory** (a file it reads at the start and updates at the end), and a **trigger** (what starts a run).
+An agent is five things: a **model** (the LLM), **instructions** (what you tell it, in plain English, sent with every call), **tools** (functions that let it act on your machine), **memory** (a file it reads at the start and updates at the end), and a **trigger** (what starts a run). Instructions ask; tools enforce.
 
 ## How this repo works
 
@@ -12,9 +12,9 @@ Folder numbers match post numbers. Posts 1 and 2 have no agent code; post 2's sm
 
 | Post | Folder | What you build |
 |---|---|---|
-| 1. What an agent actually is | none | The four boxes and the trigger ladder, no code |
+| 1. What an agent actually is | none | The five boxes and the trigger ladder, no code |
 | 2. Setting up | [`lessons/02-setting-up`](lessons/02-setting-up) | VS Code, Python, the package, an API key and `check.py` |
-| 3. Build your first agent | [`lessons/03-build-your-first-agent`](lessons/03-build-your-first-agent) | One tool, then the model and the loop: about 25 lines that make it an agent |
+| 3. Build your first agent | [`lessons/03-build-your-first-agent`](lessons/03-build-your-first-agent) | One tool, then the model, its instructions and the loop: about 25 lines that make it an agent |
 | 4. Give your agent hands and a memory | [`lessons/04-hands-and-memory`](lessons/04-hands-and-memory) | Read, write and move inside a fence, with your approval, plus memory |
 | 5. Put your agent on a schedule | [`lessons/05-a-schedule`](lessons/05-a-schedule) | Auto-approve, a report per run, and cron or Task Scheduler |
 | 6. What production means for an agent | [`lessons/06-production`](lessons/06-production) | A run log, a spend limit, failures you'll notice, and the code version |
