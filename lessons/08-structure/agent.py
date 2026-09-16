@@ -15,7 +15,7 @@ SYSTEM = (
 
 def run(client, workspace, task, approve, record, report, model="claude-haiku-4-5"):
     memory_path = workspace / "memory.md"
-    memory = memory_path.read_text(encoding="utf-8") if memory_path.exists() else "(no memory yet - first run)"
+    memory = memory_path.read_text(encoding="utf-8", errors="replace") if memory_path.exists() else "(no memory yet - first run)"
     messages = [{"role": "user", "content": f"Your memory from previous runs:\n{memory}\n\nToday's task: {task}"}]
 
     for _ in range(20):                     # safety cap: a confused agent can't loop forever

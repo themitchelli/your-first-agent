@@ -32,7 +32,7 @@ def safe_path(workspace, name):
     return path
 
 def read_file(workspace, name):
-    return safe_path(workspace, name).read_text(encoding="utf-8")
+    return safe_path(workspace, name).read_text(encoding="utf-8", errors="replace")
 
 def ask_human(question):
     return input(f"\n  {question} [y/n] ").strip().lower() == "y"
@@ -119,7 +119,7 @@ def run(workspace, task, model="claude-haiku-4-5", approve=ask_human, quiet=Fals
     stats = {"input_tokens": 0, "output_tokens": 0, "tool_calls": 0}
 
     memory_path = workspace / "memory.md"
-    memory = memory_path.read_text(encoding="utf-8") if memory_path.exists() else "(no memory yet - first run)"
+    memory = memory_path.read_text(encoding="utf-8", errors="replace") if memory_path.exists() else "(no memory yet - first run)"
     system = (
         "You are a careful file assistant working inside one folder. "
         "Use your tools to complete the task. When finished, use write_file to update "

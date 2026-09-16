@@ -58,10 +58,12 @@ Below `safe_path`, add:
 
 ```python
 def read_file(workspace, name):
-    return safe_path(workspace, name).read_text(encoding="utf-8")
+    return safe_path(workspace, name).read_text(encoding="utf-8", errors="replace")
 ```
 
-One line: check the path is inside the fence, then return the file's text. The `encoding="utf-8"` part says how the bytes in the file turn into text. UTF-8 is the way text is stored almost everywhere now, and Python on Mac assumes it. Python on Windows still guesses an older encoding unless told, and the guess can't handle a tick mark or an emoji, both of which models love to write. So every time this course reads or writes a text file, it says `encoding="utf-8"`, and the same file works on both machines. Now test the fence. Run this in the terminal:
+One line: check the path is inside the fence, then return the file's text. The two extra settings are about a problem you'll hit on real folders. `encoding="utf-8"` says how the bytes in the file turn into text. UTF-8 is the way text is stored almost everywhere now, and Python on Mac assumes it. Python on Windows still guesses an older encoding unless told, and the guess can't handle a tick mark or an emoji, both of which models love to write. So every time this course reads or writes a text file, it says `encoding="utf-8"`, and the same file works on both machines.
+
+`errors="replace"` is the other half. This tool reads files the agent didn't write, and a file from someone's Word export or an old Windows program can be in a different encoding entirely. Without this setting, one stray pound sign would crash the read. With it, any byte that isn't valid UTF-8 becomes a placeholder character and the rest of the file comes through. A tool that only *looks* at a file must never fall over because of what's in it. Writes stay strict: everything the agent writes is proper UTF-8. Now test the fence. Run this in the terminal:
 
 ```bash
 python -c "import pathlib, agent; agent.read_file(pathlib.Path('demo'), '../agent.py')"
@@ -213,7 +215,7 @@ Inside `main`, find the two lines starting `system = "You are a careful file ass
 
 ```python
     memory_path = workspace / "memory.md"
-    memory = memory_path.read_text(encoding="utf-8") if memory_path.exists() else "(no memory yet - first run)"
+    memory = memory_path.read_text(encoding="utf-8", errors="replace") if memory_path.exists() else "(no memory yet - first run)"
     system = (
         "You are a careful file assistant working inside one folder. "
         "Use your tools to complete the task. When finished, use write_file to update "
@@ -222,7 +224,7 @@ Inside `main`, find the two lines starting `system = "You are a careful file ass
     messages = [{"role": "user", "content": f"Your memory from previous runs:\n{memory}\n\nToday's task: {task}"}]
 ```
 
-- The first two lines read `memory.md` from the workspace if it exists. On the first run it doesn't, so the agent is told this is its first run.
+- The first two lines read `memory.md` from the workspace if it exists, tolerantly, the same way `read_file` does. On the first run it doesn't exist, so the agent is told this is its first run.
 - `system` is the same standing instructions as before, with one sentence added: update `memory.md` when finished, using the `write_file` tool it already has. The brackets let one string run over several lines. Nothing else about the instructions changed, and they're already sent with every call.
 - The first message now carries the memory *and* today's task, so the agent starts every run knowing what it did last time.
 

@@ -30,7 +30,7 @@ def safe_path(workspace, name):
     return path
 
 def read_file(workspace, name):
-    return safe_path(workspace, name).read_text(encoding="utf-8")
+    return safe_path(workspace, name).read_text(encoding="utf-8", errors="replace")
 
 def write_file(workspace, name, content):
     answer = input(f"\n  Agent wants to write '{name}' - allow? [y/n] ")

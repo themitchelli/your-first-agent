@@ -21,7 +21,7 @@ def safe_path(workspace, name):
     return path
 
 def read_file(workspace, name):
-    return safe_path(workspace, name).read_text(encoding="utf-8")
+    return safe_path(workspace, name).read_text(encoding="utf-8", errors="replace")
 
 def ask_human(question):
     answer = input(f"\n  {question} [y/n] ")

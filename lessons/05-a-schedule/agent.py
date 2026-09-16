@@ -39,7 +39,7 @@ def safe_path(workspace, name):
     return path
 
 def read_file(workspace, name):
-    return safe_path(workspace, name).read_text(encoding="utf-8")
+    return safe_path(workspace, name).read_text(encoding="utf-8", errors="replace")
 
 def allowed(question):
     if AUTO_APPROVE:
@@ -132,7 +132,7 @@ def main():
     client = anthropic.Anthropic()
 
     memory_path = workspace / "memory.md"
-    memory = memory_path.read_text(encoding="utf-8") if memory_path.exists() else "(no memory yet - first run)"
+    memory = memory_path.read_text(encoding="utf-8", errors="replace") if memory_path.exists() else "(no memory yet - first run)"
     system = (
         "You are a careful file assistant working inside one folder. "
         "Use your tools to complete the task. When finished, use write_file to update "
