@@ -1,15 +1,9 @@
-"""Your first agent, on a schedule.
+"""Stage 1: nobody is there to type y (post 5, step 1).
 
-Post 4's agent plus three changes, so it can run when nobody is watching:
-
-  1. --auto-approve   the clock can't type y, so this flag says yes for it
-                      (safe_path still fences every change inside the folder)
-  2. reports/         each run writes a dated report next to this file,
-                      outside the folder the agent can edit
-  3. run.sh           what the scheduler actually runs (run.bat on Windows)
-
-Run by hand, as before:   python agent.py demo "Organise this folder"
-Run as the clock would:   python agent.py demo "Organise this folder" --auto-approve
+Run:  python stages/stage1.py demo "Organise this folder" --auto-approve
+Expected: the agent runs start to finish without stopping, and every
+change it makes prints "auto-approved". Run it again without the flag
+and it asks you as before.
 """
 
 import datetime
@@ -128,7 +122,6 @@ def main():
     args = [a for a in sys.argv[1:] if a != "--auto-approve"]
     workspace = pathlib.Path(args[0])
     task = args[1]
-    report = [f"# Run at {datetime.datetime.now():%Y-%m-%d %H:%M}", f"Task: {task}", ""]
     client = anthropic.Anthropic()
 
     memory_path = workspace / "memory.md"
@@ -151,7 +144,6 @@ def main():
         for block in response.content:
             if block.type == "text" and block.text.strip():
                 print(f"\n{block.text}")
-                report.append(block.text)
         if response.stop_reason != "tool_use":
             break                           # no more tool requests: the agent is done
         messages.append({"role": "assistant", "content": response.content})
@@ -159,19 +151,12 @@ def main():
         for block in response.content:
             if block.type == "tool_use":
                 print(f"  [tool] {block.name}")
-                report.append(f"- tool: {block.name} {block.input}")
                 results.append({
                     "type": "tool_result",
                     "tool_use_id": block.id,
                     "content": run_tool(workspace, block.name, block.input),
                 })
         messages.append({"role": "user", "content": results})
-
-    reports = pathlib.Path(__file__).parent / "reports"
-    reports.mkdir(exist_ok=True)
-    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}.md"
-    report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
-    print(f"\nReport written to {report_path}")
 
 if __name__ == "__main__":        # run only when started directly, not when imported by a test
     main()

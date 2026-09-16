@@ -1,24 +1,24 @@
-"""Your first agent, on a schedule.
+"""Stage 3: what can it spend? (post 6, question 3).
 
-Post 4's agent plus three changes, so it can run when nobody is watching:
-
-  1. --auto-approve   the clock can't type y, so this flag says yes for it
-                      (safe_path still fences every change inside the folder)
-  2. reports/         each run writes a dated report next to this file,
-                      outside the folder the agent can edit
-  3. run.sh           what the scheduler actually runs (run.bat on Windows)
-
-Run by hand, as before:   python agent.py demo "Organise this folder"
-Run as the clock would:   python agent.py demo "Organise this folder" --auto-approve
+Run:  python stages/stage3.py demo "Organise this folder" --auto-approve
+Expected: a normal run logs and spends as in stage 2. Temporarily set
+MONTHLY_LIMIT_USD to 0.00 in a copy of this file and the run is refused
+before any API call, with a report ending -FAILED.md.
 """
 
 import datetime
+import json
 import pathlib
+import subprocess
 import sys
 
 # ---- settings ----
 
 AUTO_APPROVE = "--auto-approve" in sys.argv
+HERE = pathlib.Path(__file__).parent
+RUN_LOG = HERE / "runs.jsonl"
+MONTHLY_LIMIT_USD = 2.00
+PRICE_PER_MILLION_USD = {"input": 1.00, "output": 5.00}     # Claude Haiku 4.5, as of September 2026
 
 # ---- tools ----
 
@@ -122,6 +122,32 @@ def run_tool(workspace, name, args):
     except Exception as error:
         return f"Error: {error}"
 
+# ---- record keeping ----
+
+def spent_this_month():
+    if not RUN_LOG.exists():
+        return 0.0
+    this_month = f"{datetime.datetime.now():%Y-%m}"
+    total = 0.0
+    for line in RUN_LOG.read_text(encoding="utf-8").splitlines():
+        run = json.loads(line)
+        if run["started"].startswith(this_month):
+            total += run["cost_usd"]
+    return total
+
+def finish(run, report):
+    run["cost_usd"] = round((run["input_tokens"] * PRICE_PER_MILLION_USD["input"]
+                             + run["output_tokens"] * PRICE_PER_MILLION_USD["output"]) / 1_000_000, 5)
+    reports = HERE / "reports"
+    reports.mkdir(exist_ok=True)
+    failed = "" if run["result"] == "ok" else "-FAILED"
+    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}{failed}.md"
+    report.append(f"\nResult: {run['result']}  |  cost ${run['cost_usd']}  |  version {run['version']}")
+    report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
+    with RUN_LOG.open("a", encoding="utf-8") as log:
+        log.write(json.dumps(run) + "\n")
+    print(f"\nReport written to {report_path}")
+
 # ---- the agent ----
 
 def main():
@@ -129,6 +155,15 @@ def main():
     workspace = pathlib.Path(args[0])
     task = args[1]
     report = [f"# Run at {datetime.datetime.now():%Y-%m-%d %H:%M}", f"Task: {task}", ""]
+    run = {"started": f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}", "task": task,
+           "version": "unknown", "tools": [], "input_tokens": 0, "output_tokens": 0, "result": "ok"}
+
+    spent = spent_this_month()
+    if spent >= MONTHLY_LIMIT_USD:
+        run["result"] = f"refused: ${spent:.2f} already spent this month, limit is ${MONTHLY_LIMIT_USD:.2f}"
+        finish(run, report)
+        sys.exit(1)
+
     client = anthropic.Anthropic()
 
     memory_path = workspace / "memory.md"
@@ -148,6 +183,8 @@ def main():
             tools=TOOLS,
             messages=messages,
         )
+        run["input_tokens"] += response.usage.input_tokens
+        run["output_tokens"] += response.usage.output_tokens
         for block in response.content:
             if block.type == "text" and block.text.strip():
                 print(f"\n{block.text}")
@@ -160,6 +197,7 @@ def main():
             if block.type == "tool_use":
                 print(f"  [tool] {block.name}")
                 report.append(f"- tool: {block.name} {block.input}")
+                run["tools"].append({"name": block.name, "input": block.input})
                 results.append({
                     "type": "tool_result",
                     "tool_use_id": block.id,
@@ -167,11 +205,7 @@ def main():
                 })
         messages.append({"role": "user", "content": results})
 
-    reports = pathlib.Path(__file__).parent / "reports"
-    reports.mkdir(exist_ok=True)
-    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}.md"
-    report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
-    print(f"\nReport written to {report_path}")
+    finish(run, report)
 
 if __name__ == "__main__":        # run only when started directly, not when imported by a test
     main()

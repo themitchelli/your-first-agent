@@ -13,7 +13,11 @@ Run it yourself exactly as before:
 import pathlib
 import sys
 
+# ---- tools ----
+
 def list_files(workspace):
+    if not workspace.is_dir():
+        return f"There is no folder called '{workspace}' here."
     lines = []
     for path in sorted(workspace.rglob("*")):
         if path.is_file():
@@ -28,7 +32,7 @@ def safe_path(workspace, name):
     return path
 
 def read_file(workspace, name):
-    return safe_path(workspace, name).read_text()
+    return safe_path(workspace, name).read_text(encoding="utf-8")
 
 def ask_human(question):
     return input(f"\n  {question} [y/n] ").strip().lower() == "y"
@@ -38,7 +42,7 @@ def write_file(workspace, name, content, approve):          # SEAM 2: approve is
         return "The user declined this write."
     path = safe_path(workspace, name)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content)
+    path.write_text(content, encoding="utf-8")
     return f"Wrote {name}."
 
 def move_file(workspace, name, new_name, approve):
@@ -107,13 +111,15 @@ def run_tool(workspace, name, args, approve):
     except Exception as error:
         return f"Error: {error}"
 
+# ---- the agent ----
+
 def run(workspace, task, model="claude-haiku-4-5", approve=ask_human, quiet=False):
     """Run the agent once. Returns what a harness needs to know about the run."""
     client = anthropic.Anthropic()
     stats = {"input_tokens": 0, "output_tokens": 0, "tool_calls": 0}
 
     memory_path = workspace / "memory.md"
-    memory = memory_path.read_text() if memory_path.exists() else "(no memory yet - first run)"
+    memory = memory_path.read_text(encoding="utf-8") if memory_path.exists() else "(no memory yet - first run)"
     system = (
         "You are a careful file assistant working inside one folder. "
         "Use your tools to complete the task. When finished, use write_file to update "

@@ -18,13 +18,19 @@ import pathlib
 import subprocess
 import sys
 
+# ---- settings ----
+
 AUTO_APPROVE = "--auto-approve" in sys.argv
 HERE = pathlib.Path(__file__).parent
 RUN_LOG = HERE / "runs.jsonl"
 MONTHLY_LIMIT_USD = 2.00
 PRICE_PER_MILLION_USD = {"input": 1.00, "output": 5.00}     # Claude Haiku 4.5, as of September 2026
 
+# ---- tools ----
+
 def list_files(workspace):
+    if not workspace.is_dir():
+        return f"There is no folder called '{workspace}' here."
     lines = []
     for path in sorted(workspace.rglob("*")):
         if path.is_file():
@@ -39,7 +45,7 @@ def safe_path(workspace, name):
     return path
 
 def read_file(workspace, name):
-    return safe_path(workspace, name).read_text()
+    return safe_path(workspace, name).read_text(encoding="utf-8")
 
 def allowed(question):
     if AUTO_APPROVE:
@@ -53,7 +59,7 @@ def write_file(workspace, name, content):
         return "The user declined this write."
     path = safe_path(workspace, name)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content)
+    path.write_text(content, encoding="utf-8")
     return f"Wrote {name}."
 
 def move_file(workspace, name, new_name):
@@ -122,12 +128,14 @@ def run_tool(workspace, name, args):
     except Exception as error:
         return f"Error: {error}"
 
+# ---- record keeping ----
+
 def spent_this_month():
     if not RUN_LOG.exists():
         return 0.0
     this_month = f"{datetime.datetime.now():%Y-%m}"
     total = 0.0
-    for line in RUN_LOG.read_text().splitlines():
+    for line in RUN_LOG.read_text(encoding="utf-8").splitlines():
         run = json.loads(line)
         if run["started"].startswith(this_month):
             total += run["cost_usd"]
@@ -144,15 +152,17 @@ def code_version():
 def finish(run, report):
     run["cost_usd"] = round((run["input_tokens"] * PRICE_PER_MILLION_USD["input"]
                              + run["output_tokens"] * PRICE_PER_MILLION_USD["output"]) / 1_000_000, 5)
-    with RUN_LOG.open("a") as log:
-        log.write(json.dumps(run) + "\n")
     reports = HERE / "reports"
     reports.mkdir(exist_ok=True)
     failed = "" if run["result"] == "ok" else "-FAILED"
     report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}{failed}.md"
     report.append(f"\nResult: {run['result']}  |  cost ${run['cost_usd']}  |  version {run['version']}")
-    report_path.write_text("\n".join(report) + "\n")
+    report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
+    with RUN_LOG.open("a", encoding="utf-8") as log:
+        log.write(json.dumps(run) + "\n")
     print(f"\nReport written to {report_path}")
+
+# ---- the agent ----
 
 def main():
     args = [a for a in sys.argv[1:] if a != "--auto-approve"]
@@ -169,7 +179,7 @@ def main():
         sys.exit(1)
 
     memory_path = workspace / "memory.md"
-    memory = memory_path.read_text() if memory_path.exists() else "(no memory yet - first run)"
+    memory = memory_path.read_text(encoding="utf-8") if memory_path.exists() else "(no memory yet - first run)"
     system = (
         "You are a careful file assistant working inside one folder. "
         "Use your tools to complete the task. When finished, use write_file to update "

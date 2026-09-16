@@ -89,7 +89,7 @@ def run_once(client, model, answer_key):
 
 def main():
     runs = int(sys.argv[1]) if len(sys.argv) > 1 else 3
-    answer_key = json.loads((HERE / "answer_key.json").read_text())
+    answer_key = json.loads((HERE / "answer_key.json").read_text(encoding="utf-8"))
     client = anthropic.Anthropic()
     print(f"{'model':<18} {'score':>11} {'cost':>8} {'secs':>6} {'tools':>6} {'approvals':>9}")
     for model in MODELS:

@@ -33,7 +33,7 @@ def tool_use(tool, inputs):
 
 def test_fence_refuses_paths_outside_the_workspace():
     with tempfile.TemporaryDirectory() as tmp:
-        (pathlib.Path(tmp) / "secret.txt").write_text("private")      # a real file, just outside
+        (pathlib.Path(tmp) / "secret.txt").write_text("private", encoding="utf-8")      # a real file, just outside
         workspace = pathlib.Path(tmp) / "workspace"
         workspace.mkdir()
         try:
@@ -52,7 +52,7 @@ def test_declined_write_changes_nothing():
 def test_loop_runs_the_requested_tool_and_hands_back_the_result():
     with tempfile.TemporaryDirectory() as tmp:
         workspace = pathlib.Path(tmp)
-        (workspace / "asdfgh.txt").write_text("Banana bread recipe")
+        (workspace / "asdfgh.txt").write_text("Banana bread recipe", encoding="utf-8")
         fake = FakeClient([
             reply("tool_use", tool_use("move_file", {"name": "asdfgh.txt", "new_name": "Recipes/banana_bread.txt"})),
             reply("end_turn", text("Moved the recipe.")),

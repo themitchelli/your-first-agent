@@ -1,24 +1,24 @@
-"""Your first agent, on a schedule.
+"""Stage 4: what happens when it fails? (post 6, question 4).
 
-Post 4's agent plus three changes, so it can run when nobody is watching:
-
-  1. --auto-approve   the clock can't type y, so this flag says yes for it
-                      (safe_path still fences every change inside the folder)
-  2. reports/         each run writes a dated report next to this file,
-                      outside the folder the agent can edit
-  3. run.sh           what the scheduler actually runs (run.bat on Windows)
-
-Run by hand, as before:   python agent.py demo "Organise this folder"
-Run as the clock would:   python agent.py demo "Organise this folder" --auto-approve
+Run:  export ANTHROPIC_API_KEY=wrong && python stages/stage4.py demo "Organise this folder" --auto-approve
+Expected: no crash. A report ending -FAILED.md is written, and the
+last line in runs.jsonl has "result": "FAILED: ..." with the reason,
+and the script exits with code 1. Set your real key back afterwards.
 """
 
 import datetime
+import json
 import pathlib
+import subprocess
 import sys
 
 # ---- settings ----
 
 AUTO_APPROVE = "--auto-approve" in sys.argv
+HERE = pathlib.Path(__file__).parent
+RUN_LOG = HERE / "runs.jsonl"
+MONTHLY_LIMIT_USD = 2.00
+PRICE_PER_MILLION_USD = {"input": 1.00, "output": 5.00}     # Claude Haiku 4.5, as of September 2026
 
 # ---- tools ----
 
@@ -122,6 +122,32 @@ def run_tool(workspace, name, args):
     except Exception as error:
         return f"Error: {error}"
 
+# ---- record keeping ----
+
+def spent_this_month():
+    if not RUN_LOG.exists():
+        return 0.0
+    this_month = f"{datetime.datetime.now():%Y-%m}"
+    total = 0.0
+    for line in RUN_LOG.read_text(encoding="utf-8").splitlines():
+        run = json.loads(line)
+        if run["started"].startswith(this_month):
+            total += run["cost_usd"]
+    return total
+
+def finish(run, report):
+    run["cost_usd"] = round((run["input_tokens"] * PRICE_PER_MILLION_USD["input"]
+                             + run["output_tokens"] * PRICE_PER_MILLION_USD["output"]) / 1_000_000, 5)
+    reports = HERE / "reports"
+    reports.mkdir(exist_ok=True)
+    failed = "" if run["result"] == "ok" else "-FAILED"
+    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}{failed}.md"
+    report.append(f"\nResult: {run['result']}  |  cost ${run['cost_usd']}  |  version {run['version']}")
+    report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
+    with RUN_LOG.open("a", encoding="utf-8") as log:
+        log.write(json.dumps(run) + "\n")
+    print(f"\nReport written to {report_path}")
+
 # ---- the agent ----
 
 def main():
@@ -129,7 +155,14 @@ def main():
     workspace = pathlib.Path(args[0])
     task = args[1]
     report = [f"# Run at {datetime.datetime.now():%Y-%m-%d %H:%M}", f"Task: {task}", ""]
-    client = anthropic.Anthropic()
+    run = {"started": f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}", "task": task,
+           "version": "unknown", "tools": [], "input_tokens": 0, "output_tokens": 0, "result": "ok"}
+
+    spent = spent_this_month()
+    if spent >= MONTHLY_LIMIT_USD:
+        run["result"] = f"refused: ${spent:.2f} already spent this month, limit is ${MONTHLY_LIMIT_USD:.2f}"
+        finish(run, report)
+        sys.exit(1)
 
     memory_path = workspace / "memory.md"
     memory = memory_path.read_text(encoding="utf-8") if memory_path.exists() else "(no memory yet - first run)"
@@ -140,38 +173,43 @@ def main():
     )
     messages = [{"role": "user", "content": f"Your memory from previous runs:\n{memory}\n\nToday's task: {task}"}]
 
-    for _ in range(20):                     # safety cap: a confused agent can't loop forever
-        response = client.messages.create(
-            model="claude-haiku-4-5",
-            max_tokens=4096,
-            system=system,
-            tools=TOOLS,
-            messages=messages,
-        )
-        for block in response.content:
-            if block.type == "text" and block.text.strip():
-                print(f"\n{block.text}")
-                report.append(block.text)
-        if response.stop_reason != "tool_use":
-            break                           # no more tool requests: the agent is done
-        messages.append({"role": "assistant", "content": response.content})
-        results = []
-        for block in response.content:
-            if block.type == "tool_use":
-                print(f"  [tool] {block.name}")
-                report.append(f"- tool: {block.name} {block.input}")
-                results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": run_tool(workspace, block.name, block.input),
-                })
-        messages.append({"role": "user", "content": results})
+    try:
+        client = anthropic.Anthropic()
+        for _ in range(20):                     # safety cap: a confused agent can't loop forever
+            response = client.messages.create(
+                model="claude-haiku-4-5",
+                max_tokens=4096,
+                system=system,
+                tools=TOOLS,
+                messages=messages,
+            )
+            run["input_tokens"] += response.usage.input_tokens
+            run["output_tokens"] += response.usage.output_tokens
+            for block in response.content:
+                if block.type == "text" and block.text.strip():
+                    print(f"\n{block.text}")
+                    report.append(block.text)
+            if response.stop_reason != "tool_use":
+                break                           # no more tool requests: the agent is done
+            messages.append({"role": "assistant", "content": response.content})
+            results = []
+            for block in response.content:
+                if block.type == "tool_use":
+                    print(f"  [tool] {block.name}")
+                    report.append(f"- tool: {block.name} {block.input}")
+                    run["tools"].append({"name": block.name, "input": block.input})
+                    results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": run_tool(workspace, block.name, block.input),
+                    })
+            messages.append({"role": "user", "content": results})
+    except Exception as error:
+        run["result"] = f"FAILED: {error}"
 
-    reports = pathlib.Path(__file__).parent / "reports"
-    reports.mkdir(exist_ok=True)
-    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}.md"
-    report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
-    print(f"\nReport written to {report_path}")
+    finish(run, report)
+    if run["result"] != "ok":
+        sys.exit(1)
 
 if __name__ == "__main__":        # run only when started directly, not when imported by a test
     main()

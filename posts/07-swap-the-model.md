@@ -13,14 +13,14 @@ Two ideas carry this post, and they matter far beyond this agent:
 - **Score the result, not the words.** We don't judge the agent on what it *says* it did. We look at the folder afterwards and check.
 - **You can only test an agent that was built to be tested.** Our agent needs two small changes before a harness can drive it.
 
-**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. Your finished files match `lessons/07-swap-the-model` in the [repo](https://github.com/themitchelli/your-first-agent).
+**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Your finished files match `lessons/07-swap-the-model` in the course files.
 
 ## Setup: a clean copy to test
 
 We'll test the simple agent from the "Give your agent hands and a memory" post, not the scheduled production one. The harness only needs the loop, the instructions, the tools and the memory. The schedule, reports and spend guard would only get in the way here. That means you'll have two agents for a while, the one you run and the one you test. It's a pain, and the post after this one fixes it by pointing the harness at the real agent.
 
 1. In the VS Code sidebar, create a folder called `harness` inside `my-first-agent`.
-2. Copy `agent.py` from `lessons/04-hands-and-memory` in the repo into `harness`.
+2. Copy `lessons/04-hands-and-memory/agent.py` from the course files into `harness`.
 3. In the terminal, move into the new folder:
 
 ```bash
@@ -30,6 +30,28 @@ cd harness
 `(.venv)` stays on. It belongs to the terminal, not the folder. **Checkpoint: `pwd` (Mac) or `Get-Location` (Windows) ends in `harness`.**
 
 ## Step 1: two seams in the agent
+
+Here's the whole post in one picture. The five boxes from the first post are inside, unchanged. The harness wraps them: it supplies the folder, chooses the model, answers the approvals, and scores what's left behind. Notice there's no trigger box inside the wrapper. The harness *is* the trigger.
+
+```mermaid
+flowchart TB
+    subgraph H[Harness]
+        direction TB
+        F[Fixture<br/>fresh copy every run]
+        C[Two seams<br/>which model, who approves]
+        subgraph A[The agent, unchanged]
+            direction TB
+            I[Instructions] --> M[Model]
+            M <--> W[Tools]
+            M <--> R[Memory]
+        end
+        F --> A
+        C -.-> M
+        C -.-> W
+        A --> S[Score the folder<br/>not the words]
+        S --> Tb[Table<br/>score, cost, time]
+    end
+```
 
 A **seam** is a place where you can change how code behaves without rewriting it. The agent has two things a harness must control and currently can't.
 
@@ -182,7 +204,7 @@ python agent.py demo "What kinds of files are in this folder?"
 
 ## Step 2: a fixed test, with an answer key
 
-A fair comparison needs the same test every time. Download two things from `lessons/07-swap-the-model` in the repo into your `harness` folder:
+A fair comparison needs the same test every time. Copy two things from `lessons/07-swap-the-model` in the course files into your `harness` folder:
 
 - **`fixture/`** holds fifteen badly named files. A **fixture** is test material that never changes. There are four bills and receipts, four recipes, four sets of meeting notes and three travel documents, with names like `asdfgh.txt`, `copy of copy.txt` and `IMG_0042.txt`. One file is a trap: `receipt.txt` is a restaurant bill listing risotto and tiramisu. It's money, but it reads like food, and it tempts a model into filing it under recipes.
 - **`answer_key.json`** says which files belong together:

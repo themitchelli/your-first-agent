@@ -3,7 +3,7 @@
 
 # What an agent actually is
 
-Everyone is selling you agents. Almost nobody will tell you what one is in terms you could build. Here's the whole thing: an agent is a model, some instructions, some tools, some memory, and a trigger. Five boxes. In this series you build all five yourself. The first working agent is about 25 lines of loop in one Python file you can read in ten minutes. By the end, it runs on a schedule, keeps a record of everything it does, and has grown into a few small files, each split out for a reason you'll have felt first.
+Everyone is selling you agents. Almost nobody will tell you what one is in terms you could build. Here's the whole thing: an agent is a model, some instructions, some tools, some memory, and a trigger. Five boxes. In this series you build all five yourself. The first working agent is one Python file of about 65 lines, and the loop that makes it an agent is about 30 of them. You can read the whole thing in ten minutes. By the end, it runs on a schedule, keeps a record of everything it does, and has grown into a few small files, each split out for a reason you'll have felt first.
 
 ## The five boxes
 
@@ -49,11 +49,11 @@ A note on definitions, because you'll meet other ones. Most industry writing def
 
 ## Does this need an agent?
 
-Before building anything, ask a less exciting question: does this job need AI at all? Here's a simple way to decide. Call it the right-tool check.
+Before building anything, ask a less exciting question: does this job need AI at all?
 
 A lot of what gets built with AI right now doesn't. People ask a chatbot things a search engine answers faster. They build an "agent" to convert PDFs into another format, a job ordinary software has done reliably for years. It works, sort of, but it's slower and less reliable, and it costs money every single time it runs.
 
-Work down it, cheapest first, and stop at the first step that does the job:
+Here's a simple way to decide. Call it the right-tool check: a ladder of four options. Work down it, cheapest first, and stop at the first step that does the job:
 
 1. **Something that already exists.** A search engine, a spreadsheet formula, a feature already in an app you use.
 2. **A script.** If you can write the rule down, and the same input should always give the same output, write a script. Converting files, renaming by date, checking that the numbers add up. A script gives the same answer every time and costs nothing to run.

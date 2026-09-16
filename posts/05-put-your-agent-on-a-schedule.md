@@ -12,7 +12,7 @@ Here's the surprise. The agent itself barely changes. The loop, the instructions
 
 We fix those three things in turn, one small step at a time, then hand the agent to the clock.
 
-**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. You need your working `agent.py` from the last post. If yours isn't working, copy `agent.py` from `lessons/04-hands-and-memory` in the [repo](https://github.com/themitchelli/your-first-agent). Your file at the end of this post matches `lessons/05-a-schedule`.
+**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. You need your working `agent.py` from the last post. If yours isn't working, copy `lessons/04-hands-and-memory/agent.py` from the course files. Your file at the end of this post matches `lessons/05-a-schedule/agent.py`.
 
 ## Step 1: nobody is there to type y
 
@@ -35,9 +35,12 @@ import datetime
 import pathlib
 import sys
 
+# ---- settings ----
+
 AUTO_APPROVE = "--auto-approve" in sys.argv
 ```
 
+- `# ---- settings ----` is the third signpost, above the tools. Anything that's a setting for the whole program goes under it from now on.
 - `datetime` gives us today's date and time. We'll use it for report names in step 2.
 - `sys.argv` is the list of words you typed on the command line. `"--auto-approve" in sys.argv` is `True` if one of those words is `--auto-approve` and `False` if not. We store the answer in `AUTO_APPROVE`, written in capitals, a Python habit for "set once, never changed".
 
@@ -102,6 +105,8 @@ python agent.py demo "Organise any new files in this folder the same way as befo
 
 **Checkpoint: the agent runs start to finish without stopping, and every change prints "auto-approved".** Now run it without the flag and confirm it asks you again. Same agent, dial turned.
 
+Your file should be about 150 lines. Not what you expected? Compare it with `lessons/05-a-schedule/stages/stage1.py` in the course files.
+
 ## Step 2: nobody is watching the terminal
 
 When the clock runs the agent, everything it prints goes nowhere. You need a record you can read later: what task it was given, which tools it used, what it said. We'll write one report file per run.
@@ -146,14 +151,14 @@ After the loop finishes, add these lines at the end of `main`, indented four spa
     reports = pathlib.Path(__file__).parent / "reports"
     reports.mkdir(exist_ok=True)
     report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}.md"
-    report_path.write_text("\n".join(report) + "\n")
+    report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
     print(f"\nReport written to {report_path}")
 ```
 
 - `pathlib.Path(__file__).parent` is the folder that `agent.py` itself is in. `__file__` always means "this file", so the reports land beside the code wherever you run it from.
 - `mkdir(exist_ok=True)` creates `reports` the first time and does nothing after that.
 - The file name is the date and time, for example `2026-09-15-0700.md`. Names in that order sort by date automatically.
-- `"\n".join(report)` joins the lines into one block of text, which gets written to the file.
+- `"\n".join(report)` joins the lines into one block of text, which gets written to the file, as UTF-8 like every text file in this course.
 
 Run the same command again, with the flag:
 
@@ -162,6 +167,8 @@ python agent.py demo "Organise any new files in this folder the same way as befo
 ```
 
 **Checkpoint: a `reports` folder appears in the sidebar, outside `demo`, holding a file named with today's date.** Open it. You'll see the task, each tool call with its details, and what the agent said.
+
+Your file should be about 165 lines. Not what you expected? Compare it with `lessons/05-a-schedule/agent.py` in the course files. Step 3 adds no more Python, so that's the finished file.
 
 ## Step 3: the scheduler knows nothing
 
@@ -241,7 +248,7 @@ To check it's saved:
 crontab -l
 ```
 
-**Checkpoint: your line is listed.** Don't want to wait until 7am? Change the `0 7` to a time two minutes from now, such as `32 21` for 9:32pm. Wait, check for a new report, then set it back.
+**Checkpoint: your line is listed.** Cron has no "run it now" button, so to prove the schedule works without waiting until 7am, change the `0 7` to a time two minutes from now, such as `32 21` for 9:32pm. Wait, check for a new report, then set it back.
 
 Two Mac traps, both tested:
 
@@ -278,7 +285,9 @@ Test it by typing `.\run.bat` in the terminal. **Checkpoint: a new report appear
 
 **The schedule.** Press the Windows key, type **Task Scheduler** and open it. Click **Create Basic Task**. Name it "My first agent", choose **Daily**, set 7:00, choose **Start a program**, and browse to your `run.bat`. In the **Start in** box, paste the path to your `my-first-agent` folder. Click Finish.
 
-**Checkpoint: right-click your task and choose Run.** A new report appears within a minute.
+Don't wait for 7am. Task Scheduler can run a task on demand, which is the easier deal than the Mac's cron. Find your task in the list, right-click it and choose **Run**.
+
+**Checkpoint: a new report appears in `reports` within a minute of clicking Run.** If it does, 7am will work. If it doesn't, the task's History tab in Task Scheduler says what went wrong, and the usual cause is the Start in box.
 
 ## What memory does on a schedule
 

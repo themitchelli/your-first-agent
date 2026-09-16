@@ -7,7 +7,11 @@ Expected: "[tool] list_files" flashes past, then a description of your mess.
 import pathlib
 import sys
 
+# ---- tools ----
+
 def list_files(workspace):
+    if not workspace.is_dir():
+        return f"There is no folder called '{workspace}' here."
     lines = []
     for path in sorted(workspace.rglob("*")):
         if path.is_file():
@@ -29,6 +33,8 @@ def run_tool(workspace, name, args):
     if name == "list_files":
         return list_files(workspace)
     return f"Unknown tool: {name}"
+
+# ---- the agent ----
 
 def main():
     workspace = pathlib.Path(sys.argv[1])

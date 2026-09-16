@@ -10,6 +10,8 @@ It's now about 220 lines, and you've probably started to feel it. You scroll pas
 
 Those are the reasons to split a file. Not tidiness and not "best practice". **Split when something hurts, and let each new file be the answer to one specific pain.** If you can't name the pain a file fixes, don't create it.
 
+You've also been drawing the cut lines since the build post without knowing it. The section headers, `# ---- settings ----`, `# ---- tools ----`, `# ---- record keeping ----`, `# ---- the agent ----`, are where the file comes apart. Each new file is one section, named after its header.
+
 By the end of this post the agent is four files, a test file, and the harness from the last post pointed at the real thing:
 
 | File | Answers the question | Changes when you... |
@@ -25,7 +27,7 @@ The last column is the useful one. Once code is split well, most changes touch o
 
 This post is different from the build posts. Most of the code already exists, and you'll *move* it rather than type it. The new code gets explained in full as usual. Moved code gets a sentence on why it moved.
 
-**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. Start from your production `agent.py`, or copy it from `lessons/06-production` in the [repo](https://github.com/themitchelli/your-first-agent). Before you start, copy `agent.py` to `agent-single-file.py` as a backup, so you can compare if something breaks. Your finished files match `lessons/08-structure`.
+**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Start from your production `agent.py`, or copy `lessons/06-production/agent.py` from the course files. Before you start, copy `agent.py` to `agent-single-file.py` as a backup, so you can compare if something breaks. Your finished files match `lessons/08-structure`.
 
 ## Split 1: `tools.py`, the agent's hands
 
@@ -45,7 +47,7 @@ which is why it is the easiest part of the agent to test.
 
 A description at the top of a file is a **module docstring**. With several files, it's how you remember what each one is for.
 
-Now **cut** these from `agent.py` and paste them into `tools.py`, in this order: `list_files`, `safe_path`, `read_file`, `allowed`, `write_file`, `move_file`, the whole `TOOLS` list, and `run_tool`. Leave `import anthropic` behind in `agent.py`. The tools don't need it.
+Now **cut** everything under the `# ---- tools ----` header from `agent.py` and paste it into `tools.py`, header included: `list_files`, `safe_path`, `read_file`, `allowed`, `write_file`, `move_file`, the whole `TOOLS` list, and `run_tool`. The `import anthropic` line that sits among them stays in `agent.py` for now; the tools don't need it, and it moves again in split 4.
 
 ### 1b. Replace the global switch with a plugged-in approver
 
@@ -130,7 +132,7 @@ RUN_LOG = HERE / "runs.jsonl"
 PRICE_PER_MILLION_USD = {"input": 1.00, "output": 5.00}     # Claude Haiku 4.5, as of September 2026
 ```
 
-Then cut `spent_this_month`, `code_version` and `finish` from `agent.py` and paste them below.
+Then cut everything under `# ---- record keeping ----` from `agent.py`, `spent_this_month`, `code_version` and `finish`, and paste it below. The header can go; the file's docstring does its job now.
 
 One rename while you're here. The production post called the run's dictionary `run`. In the next split, the loop becomes a function called `run`, and one name for two different things is confusing. In `runlog.py`, rename the dictionary to `record`. VS Code can do it safely: in `finish`, right-click `run` on the `def finish(run, report):` line, choose **Rename Symbol** and type `record`. In `spent_this_month`, the loop variable `run` becomes `record` the same way.
 
@@ -379,7 +381,7 @@ These three build objects shaped like the real API's replies, with exactly the a
 ```python
 def test_fence_refuses_paths_outside_the_workspace():
     with tempfile.TemporaryDirectory() as tmp:
-        (pathlib.Path(tmp) / "secret.txt").write_text("private")      # a real file, just outside
+        (pathlib.Path(tmp) / "secret.txt").write_text("private", encoding="utf-8")      # a real file, just outside
         workspace = pathlib.Path(tmp) / "workspace"
         workspace.mkdir()
         try:
@@ -412,7 +414,7 @@ def test_declined_write_changes_nothing():
 def test_loop_runs_the_requested_tool_and_hands_back_the_result():
     with tempfile.TemporaryDirectory() as tmp:
         workspace = pathlib.Path(tmp)
-        (workspace / "asdfgh.txt").write_text("Banana bread recipe")
+        (workspace / "asdfgh.txt").write_text("Banana bread recipe", encoding="utf-8")
         fake = FakeClient([
             reply("tool_use", tool_use("move_file", {"name": "asdfgh.txt", "new_name": "Recipes/banana_bread.txt"})),
             reply("end_turn", text("Moved the recipe.")),

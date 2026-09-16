@@ -5,6 +5,8 @@ which is why it is the easiest part of the agent to test.
 """
 
 def list_files(workspace):
+    if not workspace.is_dir():
+        return f"There is no folder called '{workspace}' here."
     lines = []
     for path in sorted(workspace.rglob("*")):
         if path.is_file():
@@ -19,7 +21,7 @@ def safe_path(workspace, name):
     return path
 
 def read_file(workspace, name):
-    return safe_path(workspace, name).read_text()
+    return safe_path(workspace, name).read_text(encoding="utf-8")
 
 def ask_human(question):
     answer = input(f"\n  {question} [y/n] ")
@@ -34,7 +36,7 @@ def write_file(workspace, name, content, approve):
         return "The user declined this write."
     path = safe_path(workspace, name)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content)
+    path.write_text(content, encoding="utf-8")
     return f"Wrote {name}."
 
 def move_file(workspace, name, new_name, approve):

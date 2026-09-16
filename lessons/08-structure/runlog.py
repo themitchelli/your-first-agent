@@ -22,7 +22,7 @@ def spent_this_month():
         return 0.0
     this_month = f"{datetime.datetime.now():%Y-%m}"
     total = 0.0
-    for line in RUN_LOG.read_text().splitlines():
+    for line in RUN_LOG.read_text(encoding="utf-8").splitlines():
         record = json.loads(line)
         if record["started"].startswith(this_month):
             total += record["cost_usd"]
@@ -39,12 +39,12 @@ def code_version():
 def finish(record, report):
     record["cost_usd"] = round((record["input_tokens"] * PRICE_PER_MILLION_USD["input"]
                                 + record["output_tokens"] * PRICE_PER_MILLION_USD["output"]) / 1_000_000, 5)
-    with RUN_LOG.open("a") as log:
-        log.write(json.dumps(record) + "\n")
     reports = HERE / "reports"
     reports.mkdir(exist_ok=True)
     failed = "" if record["result"] == "ok" else "-FAILED"
     report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}{failed}.md"
     report.append(f"\nResult: {record['result']}  |  cost ${record['cost_usd']}  |  version {record['version']}")
-    report_path.write_text("\n".join(report) + "\n")
+    report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
+    with RUN_LOG.open("a", encoding="utf-8") as log:
+        log.write(json.dumps(record) + "\n")
     print(f"\nReport written to {report_path}")

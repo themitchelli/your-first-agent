@@ -10,7 +10,7 @@ Your agent runs every morning without you. Congratulations: you now have a small
 
 Here are the five questions. For each one we'll write a few lines of code, not a platform.
 
-**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. You need your scheduled `agent.py` from the last post. If yours isn't working, copy it from `lessons/05-a-schedule` in the [repo](https://github.com/themitchelli/your-first-agent). Your file at the end of this post matches `lessons/06-production`.
+**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. You need your scheduled `agent.py` from the last post. If yours isn't working, copy `lessons/05-a-schedule/agent.py` from the course files. Your file at the end of this post matches `lessons/06-production/agent.py`, and each question below names the stage file to compare against.
 
 ## Question 1: what is it allowed to do?
 
@@ -36,7 +36,7 @@ import sys
 
 `json` writes data in JSON, a text format that almost every program can read. `subprocess` lets Python run another program. We need it for question 5.
 
-Under the `AUTO_APPROVE` line, add:
+Under the `AUTO_APPROVE` line, in the settings section, add:
 
 ```python
 HERE = pathlib.Path(__file__).parent
@@ -82,31 +82,34 @@ The same information as the report line, stored so a program can read it.
 
 (If your indentation in these boxes looks one step deeper than your file, don't worry. It matches the file after question 4. For now, line each new line up with its neighbours.)
 
-### 2d. Finish the run: log it, then report it
+### 2d. Finish the run: report it, then log it
 
-Above `def main():`, add this function:
+Above the `# ---- the agent ----` line, add a new section header and this function:
 
 ```python
+# ---- record keeping ----
+
 def finish(run, report):
     run["cost_usd"] = round((run["input_tokens"] * PRICE_PER_MILLION_USD["input"]
                              + run["output_tokens"] * PRICE_PER_MILLION_USD["output"]) / 1_000_000, 5)
-    with RUN_LOG.open("a") as log:
-        log.write(json.dumps(run) + "\n")
     reports = HERE / "reports"
     reports.mkdir(exist_ok=True)
     failed = "" if run["result"] == "ok" else "-FAILED"
     report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}{failed}.md"
     report.append(f"\nResult: {run['result']}  |  cost ${run['cost_usd']}  |  version {run['version']}")
-    report_path.write_text("\n".join(report) + "\n")
+    report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
+    with RUN_LOG.open("a", encoding="utf-8") as log:
+        log.write(json.dumps(run) + "\n")
     print(f"\nReport written to {report_path}")
 ```
 
+- `# ---- record keeping ----` is the fourth signpost. Everything that records what happened lives under it, and there's more coming in questions 3 and 5.
 - The first line works out the cost: tokens times price per million, divided by a million. `1_000_000` is just a million; Python lets you use underscores so you can read it. `round(..., 5)` keeps five decimal places.
-- `RUN_LOG.open("a")` opens the log in **append** mode. `"a"` can only add to the end of the file, never change what's already there. That's what makes the log trustworthy. `with` makes sure the file is closed properly afterwards.
-- `json.dumps(run)` turns the dictionary into one line of JSON text.
-- The rest is last post's report code, moved in here, with two additions. A run that didn't end `"ok"` gets `-FAILED` in its file name, so failures stand out in the folder. And the report ends with a result line showing the outcome, cost and version.
+- Then last post's report code, moved in here, with two additions. A run that didn't end `"ok"` gets `-FAILED` in its file name, so failures stand out in the folder. And the report ends with a result line showing the outcome, cost and version.
+- `RUN_LOG.open("a", encoding="utf-8")` opens the log in **append** mode. `"a"` can only add to the end of the file, never change what's already there. That's what makes the log trustworthy. `with` makes sure the file is closed properly afterwards. `json.dumps(run)` turns the dictionary into one line of JSON text.
+- The order matters: the report first, the log line last. The log line is the one summary a program will read later, so it must be the last thing written, after everything it summarises has succeeded. If writing the report fails, no log line gets to claim the run was fine. Question 4 has the story of why this is written down.
 
-Now delete the old report-writing lines at the end of `main` (the five lines starting `reports = pathlib.Path(__file__).parent / "reports"`) and put this in their place:
+Now delete the old report-writing lines at the end of `main`. Search for `reports = pathlib.Path(__file__).parent` and delete that line and the four below it, down to the `print(f"\nReport written to ...")` line. Put this in their place:
 
 ```python
     finish(run, report)
@@ -119,6 +122,8 @@ python agent.py demo "Organise any new files in this folder the same way as befo
 ```
 
 **Checkpoint: a `runs.jsonl` file appears next to `agent.py`.** Open it. There's one long line with the time, task, every tool call, the token counts, `"result": "ok"` and `"cost_usd"`. When I ran this on the demo folder it cost under 2 cents. Run it again and a second line appears underneath. The first is never touched.
+
+Your file should be about 185 lines. Not what you expected? Compare it with `lessons/06-production/stages/stage2.py` in the course files.
 
 ## Question 3: what can it spend?
 
@@ -136,7 +141,7 @@ While you're in the console: **one API key per agent, named after the agent.** M
 
 ### 3a. Add up this month's spending
 
-Above `def finish`, add:
+In the record keeping section, above `def finish`, add:
 
 ```python
 def spent_this_month():
@@ -144,7 +149,7 @@ def spent_this_month():
         return 0.0
     this_month = f"{datetime.datetime.now():%Y-%m}"
     total = 0.0
-    for line in RUN_LOG.read_text().splitlines():
+    for line in RUN_LOG.read_text(encoding="utf-8").splitlines():
         run = json.loads(line)
         if run["started"].startswith(this_month):
             total += run["cost_usd"]
@@ -160,7 +165,7 @@ Notice that the guard is built on the log from question 2. The questions stack: 
 
 ### 3b. Refuse to start when the limit is reached
 
-In `main`, straight after the `run = {...}` lines, add:
+In `main`, straight after the line that ends `"result": "ok"}` (the second line of the run dictionary), add:
 
 ```python
     spent = spent_this_month()
@@ -178,26 +183,58 @@ Test it without spending money. Temporarily change `MONTHLY_LIMIT_USD = 2.00` to
 
 **Checkpoint: the run is refused straight away, and a report ending `-FAILED.md` appears.** Set the limit back to `2.00`. $2 a month is plenty for this agent. Choose your own number, but choose one.
 
+Your file should be about 200 lines. Not what you expected? Compare it with `lessons/06-production/stages/stage3.py` in the course files.
+
 ## Question 4: what happens when it fails?
 
 Cron doesn't care that the API was down this morning, or that your key expired. Right now an error inside the loop crashes the agent before `finish` runs, so the failure leaves no log line and no report. The one run you most need to know about is the one that leaves no trace.
 
 ### 4a. Catch the failure
 
-In `main`, select everything from the `client = anthropic.Anthropic()` line down to the last line of the loop, `messages.append({"role": "user", "content": results})`, and press Tab once. VS Code indents the whole block one step. (If `client = ...` sits above the `memory_path` lines in your file, move it down so it's directly above the `for` line first.) Then type `try:` on a new line above it, and add these lines under it:
+This is the biggest rearrangement in the course, so it's four small moves with a shape check at the end. It's the same kind of move that goes wrong silently, so go slowly.
+
+**Move 1: put the client next to the loop.** In `main`, the line `client = anthropic.Anthropic()` currently sits above the memory lines. Cut it and paste it directly above the `for _ in range(20):` line, at the same depth, four spaces.
+
+**Move 2: push the client and the loop one step deeper.** Click at the start of the `client = anthropic.Anthropic()` line, hold Shift, and click at the end of the loop's last line, `messages.append({"role": "user", "content": results})`, so the whole block is selected. Press Tab once. Every selected line moves four spaces to the right and nothing else changes. If something else happened, press Cmd+Z or Ctrl+Z and try again.
+
+**Move 3: open the try.** On a new line directly above `client = ...`, at four spaces, type:
 
 ```python
     try:
-        client = anthropic.Anthropic()
-        for _ in range(20):                     # safety cap: a confused agent can't loop forever
 ```
 
-and, under the loop, back at the same indentation as `try:`:
+**Move 4: add the except.** On a new line directly below the loop's last line, back at four spaces, level with `try:`, type:
 
 ```python
     except Exception as error:
         run["result"] = f"FAILED: {error}"
 ```
+
+**The shape of `main` now:**
+
+```python
+def main():                                      # column 1
+    args = ...                                   # 4 spaces
+    ...
+    spent = spent_this_month()                   # 4 spaces
+    if spent >= MONTHLY_LIMIT_USD:               # 4 spaces
+        ...                                      # 8 spaces
+    memory_path = ...                            # 4 spaces
+    memory = ...
+    system = (...)
+    messages = [...]
+    try:                                         # 4 spaces
+        client = anthropic.Anthropic()           # 8 spaces: inside try
+        for _ in range(20):                      # 8 spaces: inside try
+            response = client.messages.create(   # 12 spaces: inside the loop
+            ...
+            messages.append(...)                 # 12 spaces: the loop's last line
+    except Exception as error:                   # 4 spaces: level with try
+        run["result"] = f"FAILED: {error}"       # 8 spaces
+    finish(run, report)                          # 4 spaces
+```
+
+Check it against your file. `try:` and `except` are at the same depth as `finish`. The `for` is one step in from `try`. Everything inside the loop is one step in from `for`. If the indent guides in VS Code show the `except` lining up with the `for`, it's one step too deep.
 
 - `try:` means "attempt everything indented below me".
 - If anything in there raises an error, Python jumps straight to `except` instead of crashing. The error is saved in `error`, and we record it as the run's result.
@@ -207,7 +244,7 @@ This is a different `try` from the one in `run_tool`. That one catches a single 
 
 ### 4b. Finish, then say so with the exit code
 
-Replace the `finish(run, report)` line at the end of `main` with:
+Search for `finish(run, report)`. There are two: the one inside the spend guard stays. Replace the one at the end of `main` with:
 
 ```python
     finish(run, report)
@@ -226,6 +263,10 @@ python agent.py demo "Organise this folder." --auto-approve
 ```
 
 **Checkpoint: the agent doesn't crash with a wall of red text. It writes a `-FAILED` report, and the last line in `runs.jsonl` has `"result": "FAILED: ..."` with the reason.** Set your real key again afterwards.
+
+Your file should be about 210 lines. Not what you expected? Compare it with `lessons/06-production/stages/stage4.py` in the course files.
+
+A story about what this question can't catch. While testing this post on Windows, a run finished perfectly, the agent wrote a summary with tick marks in it, and then `finish` crashed writing the report, because the Windows default encoding has no tick character. That crash happened *after* the `except`, so nothing caught it. Worse: the report file had already been created, empty, and in the first version of `finish` the log line was written before the report, so the log said the run was fine. Three records, and the only true one was the traceback on a screen nobody would be watching at 7am. That's why every file in this course is written as UTF-8, and why `finish` writes the report before the log line. The record you trust most has to be the last thing written.
 
 The real test for this question: **would you know by lunchtime that the 7am run failed?** A `-FAILED` file in a folder you never open doesn't count. Make checking the reports folder part of your morning, or, once you're comfortable, have the failure send you a notification. Most notification services take one extra line of code. If you wouldn't know, you don't have an agent. You have a hope.
 
@@ -255,7 +296,7 @@ def code_version():
 
 ### 5b. Record it with every run
 
-In the `run = {...}` line, replace `"version": "unknown"` with:
+Search for `"version": "unknown"`. It's on the second line of the run dictionary in `main`. Replace it with:
 
 ```python
 "version": code_version(),
@@ -263,7 +304,9 @@ In the `run = {...}` line, replace `"version": "unknown"` with:
 
 Run the agent once more.
 
-**Checkpoint: the newest line in `runs.jsonl` has a `"version"`, and so does the result line at the bottom of the newest report.** It's either a short git ID or "unknown (not a git repo)".
+**Checkpoint: the newest line in `runs.jsonl` has a `"version"`, and so does the result line at the bottom of the newest report.** It's either a short git ID or "unknown (not a git repo)". You installed git in the setup post, so the command exists; whether your folder is a git project yet is the side post's business.
+
+Your file should be about 215 lines. Not what you expected? Compare it with `lessons/06-production/agent.py` in the course files.
 
 ## Where this stops
 

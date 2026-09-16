@@ -4,20 +4,29 @@
 
 # Give your agent hands and a memory
 
-Last post you built an agent in about 25 lines. It asks the model what to do, runs the tool the model asks for, and hands back the result. But it can only look. It lists files and talks about them.
+Last post you built an agent. The loop that makes it one is about 30 lines, and the whole file about 65. It asks the model what to do, runs the tool the model asks for, and hands back the result. But it can only look. It lists files and talks about them.
 
 Today it gets hands: tools that read, write and move files. Hands on your disk need protection, so it also gets a fence that keeps it inside one folder and a rule that nothing changes without your yes. Then we give it a memory, so each run starts from what the last one learned.
 
-Same approach as last time: small steps, each one explained, most ending with something you can run. Type the code yourself, with VS Code's AI helpers off. Your file at the end matches `agent.py` in the [your-first-agent repo](https://github.com/themitchelli/your-first-agent) under `lessons/04-hands-and-memory`.
+Same approach as last time: small steps, each one explained, most ending with something you can run. Type the code yourself, with VS Code's AI helpers off. Your file at the end matches `lessons/04-hands-and-memory/agent.py` in the course files.
 
 **Start of every session:** open VS Code on your `my-first-agent` folder, open a new terminal, check the line starts with `(.venv)`, and set your key:
 
+**Mac**
+
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...             # Mac
-$env:ANTHROPIC_API_KEY="sk-ant-..."             # Windows
+export ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-You need your `agent.py` from the last post, working. If it isn't, copy `stages/stage2.py` from `lessons/03-build-your-first-agent` in the repo into your folder as `agent.py` and carry on from here.
+**Windows**
+
+```powershell
+$env:ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+If anything fails, the setup post's "When it goes wrong" section has the errors and their fixes. Forgetting the key after a restart is the usual one.
+
+You need your `agent.py` from the last post, working. If it isn't, copy `lessons/03-build-your-first-agent/stages/stage2.py` from the course files into your folder as `agent.py` and carry on from here.
 
 ## Stage 3: hands that change things, with permission
 
@@ -49,10 +58,10 @@ Below `safe_path`, add:
 
 ```python
 def read_file(workspace, name):
-    return safe_path(workspace, name).read_text()
+    return safe_path(workspace, name).read_text(encoding="utf-8")
 ```
 
-One line: check the path is inside the fence, then return the file's text. Now test the fence. Run this in the terminal:
+One line: check the path is inside the fence, then return the file's text. The `encoding="utf-8"` part says how the bytes in the file turn into text. UTF-8 is the way text is stored almost everywhere now, and Python on Mac assumes it. Python on Windows still guesses an older encoding unless told, and the guess can't handle a tick mark or an emoji, both of which models love to write. So every time this course reads or writes a text file, it says `encoding="utf-8"`, and the same file works on both machines. Now test the fence. Run this in the terminal:
 
 ```bash
 python -c "import pathlib, agent; agent.read_file(pathlib.Path('demo'), '../agent.py')"
@@ -60,7 +69,15 @@ python -c "import pathlib, agent; agent.read_file(pathlib.Path('demo'), '../agen
 
 That command loads your `agent.py` without starting the agent (this is what the `if __name__` line from the last post was for) and tries to read `../agent.py`, a file one folder up, outside `demo`.
 
-**Checkpoint: it fails, on purpose,** with `outside the workspace - refused`. A security test that passes by failing. Enjoy that feeling.
+**Checkpoint: it fails, on purpose.** You get a block of red text ending in:
+
+```
+ValueError: '../agent.py' is outside the workspace - refused
+```
+
+That block is a **traceback**, and this is a good moment to learn to read one, because you'll see plenty. Read it from the bottom. The last line is the error and the message. The lines above it are the trail: which function called which, ending at the line that raised. Here the trail runs from your command into `read_file`, into `safe_path`, to the `raise`. A security test that passes by failing. Enjoy that feeling.
+
+It's ugly on purpose. In 3f we wrap every tool so that an error like this becomes one line of text the model reads and recovers from, and the agent never shows you the raw version.
 
 ### 3c. Write a file, with your permission
 
@@ -73,14 +90,14 @@ def write_file(workspace, name, content):
         return "The user declined this write."
     path = safe_path(workspace, name)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content)
+    path.write_text(content, encoding="utf-8")
     return f"Wrote {name}."
 ```
 
 - `input(...)` shows a question in the terminal and waits for you to type an answer. It's one line of code and a whole way of working: the agent proposes, you approve.
 - `.strip().lower()` tidies your answer, so `Y` and `y ` both count as yes.
 - Anything other than `y` returns a message saying you declined. Notice that it's *returned*, not raised as an error. The model reads it, learns you said no, and can choose something else.
-- If you said yes, the path goes through the fence, `mkdir` creates any folders the path needs, and the file is written.
+- If you said yes, the path goes through the fence, `mkdir` creates any folders the path needs, and the file is written, as UTF-8, for the reason in 3b.
 
 ### 3d. Move or rename a file, with your permission
 
@@ -182,9 +199,13 @@ python agent.py demo "Rename the worst-named file in this folder to something se
 
 **Checkpoint: the agent reads some files, picks the worst name, and asks your permission to rename it.** Type `y` and check the sidebar. Then run it again, type `n`, and confirm it accepts the refusal.
 
+Your file should be about 135 lines. Not what you expected? Compare it with `lessons/04-hands-and-memory/stages/stage3.py` in the course files.
+
+That's the hands. An AI just changed something on your disk, and it asked first. If you want to stop for the day, this is the place to stop. What's left is a different idea, and it's short.
+
 ## Stage 4: memory
 
-Right now the agent forgets everything the moment it finishes. Each run starts from nothing. Memory fixes that, and it takes one small step.
+Right now the agent forgets everything the moment it finishes. Each run starts from nothing. Memory is the new idea in this post, and it's smaller than it sounds: a file the agent reads when it starts and writes when it finishes. One step.
 
 ### 4a. Read a memory file and extend the instructions
 
@@ -192,7 +213,7 @@ Inside `main`, find the two lines starting `system = "You are a careful file ass
 
 ```python
     memory_path = workspace / "memory.md"
-    memory = memory_path.read_text() if memory_path.exists() else "(no memory yet - first run)"
+    memory = memory_path.read_text(encoding="utf-8") if memory_path.exists() else "(no memory yet - first run)"
     system = (
         "You are a careful file assistant working inside one folder. "
         "Use your tools to complete the task. When finished, use write_file to update "
@@ -214,6 +235,8 @@ python agent.py demo "Organise this folder: rename the files sensibly, group the
 ```
 
 **Checkpoint: the agent sorts your mess, asking permission for every change, then asks to write `memory.md`.** Say yes, then open `memory.md` and read what your agent wrote about its own work. Run it again with a different task and watch it start from what it already knows.
+
+Your file should be about 145 lines. Not what you expected? Compare it with `lessons/04-hands-and-memory/agent.py` in the course files.
 
 ## Try this
 
