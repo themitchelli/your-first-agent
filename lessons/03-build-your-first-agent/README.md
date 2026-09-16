@@ -1,5 +1,7 @@
 # Post 3: Build your first agent
 
+*Read-along: [posts/03-build-your-first-agent.md](../../posts/03-build-your-first-agent.md). Type the code from the post; use this folder to compare.*
+
 Stages 0 to 2 of the build: a tool with no AI, then the model meeting that tool in a loop.
 
 - `demo/` is the messy practice folder. Copy it into your `my-first-agent` folder.

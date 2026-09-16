@@ -4,6 +4,10 @@ A course that builds a real AI agent from a single readable Python file up to so
 
 An agent is five things: a **model** (the LLM), **instructions** (what you tell it, in plain English, sent with every call), **tools** (functions that let it act on your machine), **memory** (a file it reads at the start and updates at the end), and a **trigger** (what starts a run). Instructions ask; tools enforce.
 
+## Read the posts
+
+The posts are in [`posts/`](posts/README.md) as drafts for testers, until the series goes live on the blog. If you're testing the course, read [TESTING.md](TESTING.md) first.
+
 ## How this repo works
 
 Each lesson folder is the complete, working project as it stands at the end of that post. Code along in your own folder and compare, or copy a lesson folder and run it as-is. The differences between one lesson and the next are the lesson.

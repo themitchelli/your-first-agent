@@ -1,5 +1,7 @@
 # Post 4: Give your agent hands and a memory
 
+*Read-along: [posts/04-give-your-agent-hands-and-a-memory.md](../../posts/04-give-your-agent-hands-and-a-memory.md). Type the code from the post; use this folder to compare.*
+
 Stages 3 and 4: tools that read, write and move files inside a fence, with your approval, then a memory file.
 
 ```bash
