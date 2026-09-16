@@ -254,11 +254,21 @@ Search for `finish(run, report)`. There are two: the one inside the spend guard 
 
 The run is always logged and reported, success or failure, and a failure ends with exit code 1.
 
-Test it by breaking the key on purpose. In the terminal, set a wrong one and run:
+Test it by breaking the key on purpose. In the terminal, set a wrong one, then run the agent:
+
+**Mac**
 
 ```bash
-export ANTHROPIC_API_KEY=wrong                  # Mac
-$env:ANTHROPIC_API_KEY="wrong"                  # Windows
+export ANTHROPIC_API_KEY=wrong
+```
+
+**Windows**
+
+```powershell
+$env:ANTHROPIC_API_KEY="wrong"
+```
+
+```bash
 python agent.py demo "Organise this folder." --auto-approve
 ```
 
