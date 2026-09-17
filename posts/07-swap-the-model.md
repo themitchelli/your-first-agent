@@ -53,6 +53,8 @@ flowchart TB
     end
 ```
 
+**Every edit in this step is to `harness/agent.py`, the copy you just made.** Open that one in VS Code and check the tab's path before you type. Leave the `agent.py` in `my-first-agent` alone.
+
 A **seam** is a place where you can change how code behaves without rewriting it. The agent has two things a harness must control and currently can't.
 
 **The model is fixed.** `model="claude-haiku-4-5"` is typed into the loop. A harness that swaps models needs it to be a setting.
@@ -200,7 +202,7 @@ Running the agent by hand now goes through `run` with every default: Haiku, a hu
 python agent.py demo "What kinds of files are in this folder?"
 ```
 
-**Checkpoint: the agent behaves exactly as it did before.** Adding seams shouldn't change behaviour. If it has, compare your file with the repo's.
+**Checkpoint: `harness/agent.py` behaves exactly as the agent did before.** Adding seams shouldn't change behaviour. If it has, compare your file with the repo's.
 
 ## Step 2: a fixed test, with an answer key
 
