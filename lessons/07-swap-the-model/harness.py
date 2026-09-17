@@ -77,8 +77,6 @@ def run_once(model, answer_key):
     return {"score": grouping_score(placed, answer_key), "cost": cost, "seconds": seconds,
             "tool_calls": stats["tool_calls"], "approvals": len(approvals)}
 
-# ---- the agent ----
-
 def main():
     runs = int(sys.argv[1]) if len(sys.argv) > 1 else 3
     answer_key = json.loads((HERE / "answer_key.json").read_text(encoding="utf-8"))

@@ -169,7 +169,7 @@ def main():
 
     reports = pathlib.Path(__file__).parent / "reports"
     reports.mkdir(exist_ok=True)
-    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}.md"
+    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M%S}.md"
     report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
     print(f"\nReport written to {report_path}")
 

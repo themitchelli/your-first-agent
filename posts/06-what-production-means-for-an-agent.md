@@ -95,7 +95,7 @@ def finish(run, report):
     reports = HERE / "reports"
     reports.mkdir(exist_ok=True)
     failed = "" if run["result"] == "ok" else "-FAILED"
-    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}{failed}.md"
+    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M%S}{failed}.md"
     report.append(f"\nResult: {run['result']}  |  cost ${run['cost_usd']}  |  version {run['version']}")
     report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
     with RUN_LOG.open("a", encoding="utf-8") as log:
@@ -241,6 +241,8 @@ Check it against your file. `try:` and `except` are at the same depth as `finish
 - `client = anthropic.Anthropic()` goes *inside* the `try` on purpose. A missing or wrong key fails right there, and that's one of the most likely failures on a schedule. It happened to me while testing this course.
 
 This is a different `try` from the one in `run_tool`. That one catches a single tool's error and hands it back to the model to deal with. This one catches anything that stops the whole run.
+
+It also catches less than you might fear. The Anthropic library already retries a call twice, with a pause between, when the server is busy or the connection drops. What reaches your `except` is what survived that. A four-second wobble at 7am doesn't fail the run; a wrong key or a dead network does.
 
 ### 4b. Finish, then say so with the exit code
 

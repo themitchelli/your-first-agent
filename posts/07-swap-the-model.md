@@ -280,7 +280,7 @@ def where_did_files_go(workspace, originals):
     return placed
 ```
 
-- `fingerprint` reads a file and returns its **SHA-256 hash**: a long code calculated from the contents. Identical contents always give the same code, and different contents give different codes.
+- `fingerprint` reads a file and returns its **SHA-256 hash**: a long code calculated from the contents. Identical contents always give the same code, and different contents give different codes. That's also the scorer's one assumption: every fixture file has different contents. If you add files to the fixture later, make sure no two are identical, or the scorer can't tell them apart.
 - `by_content` is a lookup table from each original file's fingerprint to its original name.
 - The loop goes through every file in the folder after the run. If its fingerprint matches an original, we record which subfolder it's in, whatever it's now called. Files the agent creates, like `memory.md`, match nothing and are ignored.
 - `path.parent != workspace` skips files still sitting at the top of the folder. They haven't been grouped.

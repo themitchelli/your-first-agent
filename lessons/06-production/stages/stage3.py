@@ -141,7 +141,7 @@ def finish(run, report):
     reports = HERE / "reports"
     reports.mkdir(exist_ok=True)
     failed = "" if run["result"] == "ok" else "-FAILED"
-    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}{failed}.md"
+    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M%S}{failed}.md"
     report.append(f"\nResult: {run['result']}  |  cost ${run['cost_usd']}  |  version {run['version']}")
     report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
     with RUN_LOG.open("a", encoding="utf-8") as log:

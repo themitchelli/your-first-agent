@@ -78,6 +78,8 @@ Now run it through the right-tool check. Could an existing tool do it? Could you
 
 If it really does need an agent, write one sentence: "I want an agent that ___ every ___." Keep it. In the build posts we make one, and at the end you'll know how to build yours.
 
+*Further reading: if you already write Python and want the one-sitting version of this idea, Bob Belderbos's [There Is No Magic: An AI Agent in 60 Lines of Python](https://belderbos.dev/blog/build-minimal-ai-agent-python/) builds the same loop with a fake model and no API key. This series is the slower road to a real one.*
+
 *As of September 2026, one run of the agent in this series costs a few pence. You'll need about £5 of API credit for the whole course, including the post where we test it against three models. Details next time.*
 
 ---

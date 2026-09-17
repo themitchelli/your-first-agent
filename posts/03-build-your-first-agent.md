@@ -323,7 +323,11 @@ Everything from `response =` to the last `messages.append` sits at eight spaces 
 
 Your file should be about 65 lines. Not what you expected? Compare it with `lessons/03-build-your-first-agent/stages/stage2.py` in the course files.
 
-Here's what just happened. The model read your question and asked for `list_files`. Your code ran it and sent back the result. The model read the list and answered you. Count the lines inside `main` and you'll find about 30 of them. That's the agent. The other 35 are one tool, its description and two imports. Everything from here on is more tools and better manners.
+Here's what just happened. The model read your question and asked for `list_files`. Your code ran it and sent back the result. The model read the list and answered you. That's the whole loop, and it's worth having a phrase for it: **ask, run, hand back, repeat.** Every agent you'll ever meet is that phrase with more tools.
+
+Two things you built without being told what they were. The twenty-round cap is a **termination guard**: the standard answer to "what if the agent never decides it's done?" And the `Unknown tool` reply in `run_tool` is the standard answer to a model asking for a tool that doesn't exist, which models do. Frameworks sell both as features. You typed them.
+
+One more thing to know about the loop. The model has no memory between calls, so every call sends the whole conversation again, including every tool result so far. That's why a long run costs more than a short one, and why the cap is a ceiling on purpose, not just a safety net. Count the lines inside `main` and you'll find about 30 of them. That's the agent. The other 35 are one tool, its description and two imports. Everything from here on is more tools and better manners.
 
 Look at who did what. `list_files` is ordinary Python: it gives the same answer every time and costs nothing. The model did the one part that needs judgement, which was deciding that it needed the file list and then making sense of it. That split is the right-tool check from the first post in action. Keep it as you add tools: anything with a rule you can write down belongs in code, and the model gets only the decisions.
 

@@ -150,14 +150,14 @@ After the loop finishes, add these lines at the end of `main`, indented four spa
 ```python
     reports = pathlib.Path(__file__).parent / "reports"
     reports.mkdir(exist_ok=True)
-    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M}.md"
+    report_path = reports / f"{datetime.datetime.now():%Y-%m-%d-%H%M%S}.md"
     report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
     print(f"\nReport written to {report_path}")
 ```
 
 - `pathlib.Path(__file__).parent` is the folder that `agent.py` itself is in. `__file__` always means "this file", so the reports land beside the code wherever you run it from.
 - `mkdir(exist_ok=True)` creates `reports` the first time and does nothing after that.
-- The file name is the date and time, for example `2026-09-15-0700.md`. Names in that order sort by date automatically.
+- The file name is the date and time down to the second, for example `2026-09-15-070003.md`. Names in that order sort by date automatically, and two runs a minute apart can't overwrite each other.
 - `"\n".join(report)` joins the lines into one block of text, which gets written to the file, as UTF-8 like every text file in this course.
 
 Run the same command again, with the flag:
