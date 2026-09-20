@@ -244,6 +244,8 @@ Your file should be about 145 lines. Not what you expected? Compare it with `les
 
 Point the agent at a real messy folder of your own. Copy the folder first if you're nervous, although the y/n prompts protect you either way. Then try the task you wrote down for the exercise in the first post.
 
+Before you run it, read your task back as if you were the agent. A vague task is a risk of its own kind. Where you leave a gap, the model fills it with a guess, and it won't tell you it guessed. "Tidy this folder" is vague: tidy by date or by project? May it rename your files, or only move them? Say what tidy means to you. The fence, the y/n prompt and the round cap are there to contain a bad guess. A clear task means fewer bad guesses to contain.
+
 If that task needs a tool the agent doesn't have, you now know the recipe. Write a function. Describe it in `TOOLS`. Route it in `run_tool`. That isn't a beginner exercise. It's the actual job, and you can do it.
 
 Next post: the same agent on a schedule, doing its work while you sleep.

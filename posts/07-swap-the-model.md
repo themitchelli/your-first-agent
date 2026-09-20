@@ -89,32 +89,66 @@ def write_file(workspace, name, content, approve):          # SEAM 2: approve is
     if not approve(f"Agent wants to write '{name}' - allow?"):
 ```
 
-and the first lines of `move_file` to:
+Then do the same to `move_file`. Change its first lines from:
+
+```python
+def move_file(workspace, name, new_name):
+    answer = input(f"\n  Agent wants to move '{name}' -> '{new_name}' - allow? [y/n] ")
+    if answer.strip().lower() != "y":
+```
+
+to:
 
 ```python
 def move_file(workspace, name, new_name, approve):
     if not approve(f"Agent wants to move '{name}' -> '{new_name}' - allow?"):
 ```
 
+In both functions, three lines become two. The `answer = input(...)` line and the old `if answer...` line both go, and the new `if not approve(...)` line takes their place. The `return "The user declined..."` line underneath stays where it is.
+
 `approve` is a new input, and it's a *function*. In Python you can pass a function around like any other value, then call it. `write_file` no longer knows or cares who is deciding. It asks whatever approver it was given. That's the whole idea of a seam: the tool stays the same, and the decision gets plugged in from outside.
 
 ### 1c. Pass the approver through
 
-The tools are called from `run_tool`, so it needs to hand the approver on. Change its first line to:
+The tools are called from `run_tool`, so it needs to hand the approver on. Three lines change, and each one only gains `approve` at the end of its brackets.
+
+Change the first line of `run_tool` from:
+
+```python
+def run_tool(workspace, name, args):
+```
+
+to:
 
 ```python
 def run_tool(workspace, name, args, approve):
 ```
 
-and its two changing routes to:
+Inside it, change the `write_file` route from:
+
+```python
+            return write_file(workspace, args["name"], args["content"])
+```
+
+to:
 
 ```python
             return write_file(workspace, args["name"], args["content"], approve)
 ```
 
+and the `move_file` route from:
+
+```python
+            return move_file(workspace, args["name"], args["new_name"])
+```
+
+to:
+
 ```python
             return move_file(workspace, args["name"], args["new_name"], approve)
 ```
+
+The `list_files` and `read_file` routes don't change. Those tools never asked permission, so they have no approver to pass.
 
 ### 1d. `main` becomes `run`, with settings
 
@@ -161,11 +195,19 @@ Straight after the closing `)` of that call, add:
         stats["output_tokens"] += response.usage.output_tokens
 ```
 
-Change the text-printing line to respect `quiet`:
+A few lines further down, find the line that prints what the model says. Change it from:
+
+```python
+            if block.type == "text" and block.text.strip():
+```
+
+to:
 
 ```python
             if block.type == "text" and block.text.strip() and not quiet:
 ```
+
+Only the end of the line changes: `and not quiet` goes in before the colon. The `print` line underneath stays as it is.
 
 Replace `print(f"  [tool] {block.name}")` with:
 
@@ -175,7 +217,13 @@ Replace `print(f"  [tool] {block.name}")` with:
                     print(f"  [tool] {block.name}")
 ```
 
-In the `run_tool(...)` call, pass the approver along:
+In the `run_tool(...)` call, pass the approver along. Change the line from:
+
+```python
+                    "content": run_tool(workspace, block.name, block.input),
+```
+
+to:
 
 ```python
                     "content": run_tool(workspace, block.name, block.input, approve),
