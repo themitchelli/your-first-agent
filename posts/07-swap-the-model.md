@@ -277,7 +277,7 @@ The group names don't matter. The agent will never see this file. It records whi
 
 ## Step 3: the harness
 
-Create `harness.py` in the `harness` folder. We'll build it in five parts.
+Create `harness.py` in the `harness` folder. We'll build it in five parts. Each part goes at the bottom of the file, below the one before it, starting at the left margin with a blank line in between. Nothing in this step is typed inside an earlier part.
 
 ### 3a. Imports and settings
 
@@ -314,7 +314,7 @@ The new imports, briefly:
 
 ### 3b. Where did each file end up?
 
-The agent renames files, so after a run we can't look for `asdfgh.txt` by name. It may now be `Recipes/Weeknight_Chilli.txt`. But moving and renaming never change what's *inside* a file, so we identify files by their contents. Add:
+The agent renames files, so after a run we can't look for `asdfgh.txt` by name. It may now be `Recipes/Weeknight_Chilli.txt`. But moving and renaming never change what's *inside* a file, so we identify files by their contents. Below the `HERE` line, add:
 
 ```python
 def fingerprint(path):
@@ -341,7 +341,7 @@ def where_did_files_go(workspace, originals):
 
 ### 3c. The score
 
-Now the scoring. Look at every **pair** of files. For each pair the answer key says either "these belong together" or "these don't". Then check the folder: did the pair end up together? Add:
+Now the scoring. Look at every **pair** of files. For each pair the answer key says either "these belong together" or "these don't". Then check the folder: did the pair end up together? Below `where_did_files_go`, add:
 
 ```python
 def grouping_score(placed, answer_key):
@@ -379,7 +379,7 @@ That builds a perfect placement straight from the answer key and scores it. **Ch
 
 ### 3d. One run
 
-Add:
+Below `grouping_score`, add:
 
 ```python
 def run_once(model, answer_key):
@@ -408,7 +408,7 @@ def run_once(model, answer_key):
 
 ### 3e. Every model, several times
 
-Finally:
+Finally, at the very bottom of the file, below `run_once`:
 
 ```python
 def main():
