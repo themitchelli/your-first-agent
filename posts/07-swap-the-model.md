@@ -341,7 +341,30 @@ def where_did_files_go(workspace, originals):
 
 ### 3c. The score
 
-Now the scoring. Look at every **pair** of files. For each pair the answer key says either "these belong together" or "these don't". Then check the folder: did the pair end up together? Below `where_did_files_go`, add:
+Now the scoring. Look at every **pair** of files. For each pair the answer key says either "these belong together" or "these don't". Then check the folder: did the pair end up together?
+
+Do it by hand once, on something small, before you type any code.
+
+Take four files. The answer key says two are recipes (chilli, soup) and two are bills (gas, phone). The agent sorts them badly. It puts chilli, soup and gas in a folder called Food, and leaves phone alone in Bills.
+
+Four files make six pairs. Ask each pair two questions:
+
+| Pair | Should be together? | Ended up together? |
+|---|---|---|
+| chilli + soup | yes | yes |
+| chilli + gas | no | yes |
+| soup + gas | no | yes |
+| chilli + phone | no | no |
+| soup + phone | no | no |
+| gas + phone | yes | no |
+
+Count down the columns. Two pairs should be together. Three pairs ended up together. Only one pair, chilli + soup, has a yes in both columns. Call those counts `should`, `did` and `both`: 2, 3 and 1.
+
+- **Recall** is `both / should`, here 1 out of 2. Of the pairs that belong together, what share got put together? The agent split the bills, so it loses marks.
+- **Precision** is `both / did`, here 1 out of 3. Of the pairs that got put together, what share really belong together? The agent lumped gas in with the food, so it loses marks here too.
+- **F1** combines the two into one number from 0 to 1. For this sort it comes to 0.4.
+
+The function below is that table, and nothing more. Below `where_did_files_go`, add:
 
 ```python
 def grouping_score(placed, answer_key):
@@ -360,12 +383,15 @@ def grouping_score(placed, answer_key):
     return 2 * precision * recall / (precision + recall)
 ```
 
+Read it against the table:
+
 - `truth` flips the answer key round, so you can look up any file's group.
-- `itertools.combinations(truth, 2)` produces every pair of files: 105 pairs from 15 files.
-- For each pair we count three things. `should`: pairs the key says belong together. `did`: pairs that ended up together. `both`: pairs that belong together *and* ended up together. In Python, `True` counts as 1 and `False` as 0, so adding a comparison adds 1 or nothing.
-- **Recall** is `both / should`: of the pairs that belong together, what share got put together? It punishes splitting groups up.
-- **Precision** is `both / did`: of the pairs that got put together, what share really belong together? It punishes lumping everything into one folder.
-- The last line combines the two into one number from 0 to 1, called **F1**. It's only high when both are high, so neither "one folder per file" nor "one folder for everything" can fool it.
+- `itertools.combinations(truth, 2)` writes the first column: every pair, listed once. `itertools` is a toolbox that comes with Python, and `combinations` is the tool in it that lists pairs so you don't have to write the loops yourself. Our fixture has 15 files, which makes 105 pairs.
+- `together_in_key` and `together_now` are the two yes/no columns.
+- The three `+=` lines count down the columns. In Python, `True` counts as 1 and `False` as 0, so adding a comparison adds 1 or nothing.
+- The last two lines do the division and combine the results into F1.
+
+F1 is only high when precision and recall are both high, and that stops a lazy agent cheating. Put all four files in one folder and every pair is together: recall is perfect, but precision drops to 2 out of 6 and the score is 0.5. Give every file its own folder and no pair is together, so the score is 0.
 
 Why pairs? Because folder names don't matter. "Invoices", "Bills" and "Money" are all correct. Pairs only ask whether things that belong together ended up together.
 
@@ -375,7 +401,17 @@ Before trusting a score, test it. In the terminal:
 python -c "import json, harness as h; k = json.load(open('answer_key.json')); perfect = {n: g for g, ns in k.items() for n in ns}; print(h.grouping_score(perfect, k))"
 ```
 
-That builds a perfect placement straight from the answer key and scores it. **Checkpoint: it prints `1.0`.** When I built this, testing the score before spending any money caught a bug: an agent that did nothing at all scored 0.33. That's why 3b labels files left at the top level separately.
+That builds a perfect placement straight from the answer key and scores it. **Checkpoint: it prints `1.0`.**
+
+Now score the bad sort from the table. You already know the answer it should give:
+
+```bash
+python -c "import harness as h; key = {'recipes': ['chilli', 'soup'], 'bills': ['gas', 'phone']}; placed = {'chilli': 'Food', 'soup': 'Food', 'gas': 'Food', 'phone': 'Bills'}; print(h.grouping_score(placed, key))"
+```
+
+**Checkpoint: it prints `0.4`**, the number you worked out by hand.
+
+When I built this, testing the score before spending any money caught a bug: an agent that did nothing at all scored 0.33. That's why 3b labels files left at the top level separately.
 
 ### 3d. One run
 
