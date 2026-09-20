@@ -27,7 +27,7 @@ The last column is the useful one. Once code is split well, most changes touch o
 
 This post is different from the build posts. Most of the code already exists, and you'll *move* it rather than type it. The new code gets explained in full as usual. Moved code gets a sentence on why it moved.
 
-**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Coming back after a break? `my-first-agent` is in your home folder (Finder: Go > Home). A new terminal forgets both the virtual environment and the key, so switch the environment on again (`source .venv/bin/activate` on Mac, `.venv\Scripts\Activate.ps1` on Windows) and set the key again. Both are in the setup post, steps 4 and 7. Start from your production `agent.py`, the one in `my-first-agent` itself, or copy `lessons/06-production/agent.py` from the course files. If you did the harness post you now have two files called `agent.py`. Leave the copy inside `harness` alone until the last section of this post, and run every command from `my-first-agent`, not from `harness`. Before you start, copy `agent.py` to `agent-single-file.py` as a backup, so you can compare if something breaks. Your finished files match `lessons/08-structure`.
+**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Coming back after a break? `my-first-agent` is in your home folder (Finder: Go > Home). A new terminal forgets both the virtual environment and the key, so switch the environment on again (`source .venv/bin/activate` on Mac, `.venv\Scripts\Activate.ps1` on Windows) and set the key again. Both are in the setup post, steps 4 and 7. Start from your production `agent.py`, the one in `my-first-agent` itself, or copy `lessons/06-production/agent.py` from the course files. If you did the harness post you now have two files called `agent.py`. Leave the copy inside `harness` alone until the last section of this post, and run every command from `my-first-agent`, not from `harness`. **Before you start, make a backup:** copy `agent.py` to `agent-single-file.py` (in the terminal, `cp agent.py agent-single-file.py` on Mac or `copy agent.py agent-single-file.py` on Windows), so you can compare if something breaks. Your finished files match `lessons/08-structure`.
 
 **If you did the harness post, you haven't lost that work.** The seams you cut there went into a copy of the simple agent from the hands-and-memory post, which has no spend limit and no run log. This post starts from your production agent and gives it the same two seams properly: the plugged-in approver arrives in split 1, and the choice of model in split 3. In the last section you point the harness at the real agent and delete the copy.
 
@@ -49,7 +49,9 @@ which is why it is the easiest part of the agent to test.
 
 A description at the top of a file is a **module docstring**. With several files, it's how you remember what each one is for.
 
-Now **cut** everything under the `# ---- tools ----` header from `agent.py` and paste it into `tools.py`, header included: `list_files`, `safe_path`, `read_file`, `allowed`, `write_file`, `move_file`, the whole `TOOLS` list, and `run_tool`. The `import anthropic` line that sits among them stays in `agent.py` for now; the tools don't need it, and it moves again in split 4.
+Now **cut** everything under the `# ---- tools ----` header from `agent.py` and paste it into `tools.py`, header included: `list_files`, `safe_path`, `read_file`, `allowed`, `write_file`, `move_file`, the whole `TOOLS` list, and `run_tool`. One line in the middle of that block doesn't belong to the tools: `import anthropic`. Before you cut, move it up to the top of `agent.py`, under `import sys`. The tools don't need it, and it moves again in split 4.
+
+Save both files. From this post on you're editing several files at once, and the terminal only sees what's saved, so look for the white dot on each tab before you run anything (or turn on **File > Auto Save**). Then check the cut really happened: `agent.py` should now be about 130 lines, and its Outline should show no `list_files` or `run_tool`.
 
 ### 1b. Replace the global switch with a plugged-in approver
 
@@ -135,7 +137,7 @@ to:
 
 If you did the harness post, this is the same edit you made to the copy in `harness`. This time it's going into the real agent.
 
-**Checkpoint:** tools don't need the API, so test them right away, for free:
+**Checkpoint:** tools don't need the API, so test them right away, for free. Run this from `my-first-agent`. If your terminal prompt still says `harness` from the last post, type `cd ..` first:
 
 ```bash
 python -c "import pathlib, tools; print(tools.list_files(pathlib.Path('demo')))"

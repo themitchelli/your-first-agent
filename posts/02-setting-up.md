@@ -44,8 +44,9 @@ Three parts of the window matter for this course, and later posts use these name
 - **The editor**, in the middle. Where you type code. The numbers down its left edge are line numbers; later posts use them as a sanity check.
 - **The terminal**, a panel across the bottom. You type a command, press Enter, and read what comes back. It isn't open until you open it: choose **Terminal > New Terminal** from the menu bar at the top of the screen, or press Ctrl+` (the backtick key, top left of most keyboards). If the panel ever disappears, the menu brings it back.
 
-Four things you'll want by the third post, all in the editor:
+Five things you'll want by the third post, all in the editor:
 
+- **Saving:** the terminal runs the file that's saved on disk, not the one on your screen. A white dot on a file's tab means it has changes you haven't saved, and Cmd+S (Ctrl+S on Windows) saves them. Better still, choose **File > Auto Save** once and VS Code saves for you as you type. When a change you made seems to have had no effect, an unsaved file is the first thing to check.
 - **Find:** Cmd+F on Mac, Ctrl+F on Windows, then type the text you're looking for. When a post says "find the line that says X", this is how.
 - **Outline:** in the sidebar, below your files, there's a section called Outline. It lists every function in the open file, and clicking one jumps to it. Once your agent is a couple of hundred lines long, this is the map.
 - **Compare two files:** right-click a file in the sidebar and choose **Select for Compare**, then right-click another file and choose **Compare with Selected**. Every line that differs is highlighted side by side. This is how you'll check your file against the course's copy when a checkpoint doesn't match.
