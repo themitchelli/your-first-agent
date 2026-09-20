@@ -27,7 +27,7 @@ The last column is the useful one. Once code is split well, most changes touch o
 
 This post is different from the build posts. Most of the code already exists, and you'll *move* it rather than type it. The new code gets explained in full as usual. Moved code gets a sentence on why it moved.
 
-**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Start from your production `agent.py`, or copy `lessons/06-production/agent.py` from the course files. Before you start, copy `agent.py` to `agent-single-file.py` as a backup, so you can compare if something breaks. Your finished files match `lessons/08-structure`.
+**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Coming back after a break? `my-first-agent` is in your home folder (Finder: Go > Home). A new terminal forgets both the virtual environment and the key, so switch the environment on again (`source .venv/bin/activate` on Mac, `.venv\Scripts\Activate.ps1` on Windows) and set the key again. Both are in the setup post, steps 4 and 7. Start from your production `agent.py`, or copy `lessons/06-production/agent.py` from the course files. Before you start, copy `agent.py` to `agent-single-file.py` as a backup, so you can compare if something breaks. Your finished files match `lessons/08-structure`.
 
 ## Split 1: `tools.py`, the agent's hands
 
@@ -67,33 +67,71 @@ def auto_approve(question):
 
 These are the two notches on the approval dial from the schedule post, now as two separate functions. Whoever starts the agent picks one.
 
-Then give the tools an `approve` input and use it. The first lines of `write_file` become:
+Then give the tools an `approve` input and use it. In each function two things change: `approve` joins the inputs on the `def` line, and `allowed(` becomes `approve(` on the line below. Change the first lines of `write_file` from:
+
+```python
+def write_file(workspace, name, content):
+    if not allowed(f"Agent wants to write '{name}' - allow?"):
+```
+
+to:
 
 ```python
 def write_file(workspace, name, content, approve):
     if not approve(f"Agent wants to write '{name}' - allow?"):
 ```
 
-and of `move_file`:
+and the first lines of `move_file` from:
+
+```python
+def move_file(workspace, name, new_name):
+    if not allowed(f"Agent wants to move '{name}' -> '{new_name}' - allow?"):
+```
+
+to:
 
 ```python
 def move_file(workspace, name, new_name, approve):
     if not approve(f"Agent wants to move '{name}' -> '{new_name}' - allow?"):
 ```
 
-`run_tool` passes it through. Its first line and two routes become:
+`run_tool` passes the approver through. Three of its lines change, and each one only gains `approve` at the end of its brackets. Change its first line from:
+
+```python
+def run_tool(workspace, name, args):
+```
+
+to:
 
 ```python
 def run_tool(workspace, name, args, approve):
 ```
 
+Inside it, change the `write_file` route from:
+
+```python
+            return write_file(workspace, args["name"], args["content"])
+```
+
+to:
+
 ```python
             return write_file(workspace, args["name"], args["content"], approve)
 ```
 
+and the `move_file` route from:
+
+```python
+            return move_file(workspace, args["name"], args["new_name"])
+```
+
+to:
+
 ```python
             return move_file(workspace, args["name"], args["new_name"], approve)
 ```
+
+If you did the harness post, this is the same edit you made to the copy in `harness`. This time it's going into the real agent.
 
 **Checkpoint:** tools don't need the API, so test them right away, for free:
 
@@ -510,7 +548,19 @@ Then make the client, once, in `main`. Under the `answer_key = ...` line add:
     client = anthropic.Anthropic()
 ```
 
-change the `run_once` call to `run_once(client, model, answer_key)`, and add `import anthropic` above `import agent`.
+A little further down, inside the `for model in MODELS:` loop, hand the client to every run. Change:
+
+```python
+        results = [run_once(model, answer_key) for _ in range(runs)]
+```
+
+to:
+
+```python
+        results = [run_once(client, model, answer_key) for _ in range(runs)]
+```
+
+Last, at the top of the file, add `import anthropic` on its own line above `import agent`.
 
 One honest note. Harness runs go through `agent.run` and never through `main.py`, so they're not written to `runs.jsonl` and don't count towards the monthly limit. That's right, because they're tests, not the agent's work, but it means the console spend limit from the production post is the only thing capping them. Check it's set.
 

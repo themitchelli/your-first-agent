@@ -13,7 +13,7 @@ Two ideas carry this post, and they matter far beyond this agent:
 - **Score the result, not the words.** We don't judge the agent on what it *says* it did. We look at the folder afterwards and check.
 - **You can only test an agent that was built to be tested.** Our agent needs two small changes before a harness can drive it.
 
-**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Your finished files match `lessons/07-swap-the-model` in the course files.
+**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Coming back after a break? `my-first-agent` is in your home folder (Finder: Go > Home). A new terminal forgets both the virtual environment and the key, so switch the environment on again (`source .venv/bin/activate` on Mac, `.venv\Scripts\Activate.ps1` on Windows) and set the key again. Both are in the setup post, steps 4 and 7. Your finished files match `lessons/07-swap-the-model` in the course files.
 
 ## Setup: a clean copy to test
 
