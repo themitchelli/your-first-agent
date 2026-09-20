@@ -229,11 +229,14 @@ to:
                     "content": run_tool(workspace, block.name, block.input, approve),
 ```
 
-And after the loop, at the end of the function, send the numbers back:
+And after the loop, at the end of the function, send the numbers back. The new line goes straight after the `messages.append(...)` line that ends the loop:
 
 ```python
+        messages.append({"role": "user", "content": results})
     return stats
 ```
+
+Mind the indentation. `return stats` is four spaces in, level with the `for` line, which puts it inside `run` but after the loop. Indentation is how Python decides what belongs to what. At eight spaces the line would be inside the loop, and the agent would stop after its first round. With no indent it would be outside the function, and Python would refuse to run the file.
 
 ### 1f. A new, tiny `main`
 
