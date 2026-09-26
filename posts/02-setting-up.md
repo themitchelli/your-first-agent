@@ -8,6 +8,8 @@ This post installs everything the course needs and checks each piece before movi
 
 Every step ends with a checkpoint. Don't move on until you've seen it.
 
+Setting this up on a work computer? Read "At home or at work?" in the first post before you install anything.
+
 One rule about the code boxes. Terminal commands, the short lines you run, are fine to copy and paste. Where Mac and Windows differ there are two boxes, labelled, and you use the one for your machine. Python files, the code that becomes the agent, you type. That starts in the last step of this post, and the reason is in the next one.
 
 ## 1. Install VS Code

@@ -70,6 +70,18 @@ That includes the big things. A multi-agent workflow is agents wired together th
 
 So when someone eventually shows you a diagram with fourteen boxes, you'll be able to point at each one and say: model, instructions, tool, memory, trigger, and nine boxes of packaging.
 
+## At home or at work?
+
+This series assumes you're at home: your own computer, and your own API account paid for with your own money. That's not the same as a Claude or ChatGPT subscription, and the setup post explains the difference.
+
+If you want to do this at work, check a few things first. Some are rules that apply to you whether anyone mentions them or not.
+
+- **Can you install the software?** The course needs Python, an editor, git and one Python package. Many companies control what goes on their machines, and some block installing software altogether.
+- **Does your company have its own AI endpoint?** Many route AI through a controlled service, such as Microsoft Foundry or an API gateway like Azure API Management, so they can see what's sent and who sent it. If yours does, a personal API key is probably the wrong door, and work files certainly shouldn't go through it. An agent reads files and sends their contents to the model. At work, those files are the company's data.
+- **Is there an AI policy that covers building agents?** Some companies need you to get approval first, or to list every agent in a register. The last post in this series builds a small register, so you'll know what goes in one.
+
+If you don't know the answer to any of these, the answer is that you don't know. Ask before you start. It's always safer, and a short conversation with IT now costs much less than explaining an agent later.
+
 ## Try this
 
 Before the next post, pick a job you'd like an agent to do. Good candidates are boring, repetitive and full of text. A messy folder that needs sorting. Notes that need summarising. A weekly file that needs checking.
