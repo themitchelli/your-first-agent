@@ -320,6 +320,8 @@ Run the agent once more.
 
 Your file should be about 215 lines. Not what you expected? Compare it with `lessons/06-production/agent.py` in the course files.
 
+A git ID says which code ran. It doesn't say what that code is allowed to do, or whether it was any good. The register post, at the end of the series, writes both down next to the version.
+
 ## Where this stops
 
 Everything in this series runs on one machine and relies on one person's judgement. For a personal agent, that's enough.

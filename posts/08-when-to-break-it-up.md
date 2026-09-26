@@ -589,4 +589,4 @@ Add a fifth tool, `delete_file`, with approval, following the recipe from the bu
 
 ---
 
-← [Part 7](07-swap-the-model.md) · [Series page](README.md)
+← [Part 7](07-swap-the-model.md) · [Series page](README.md) · [Part 9](09-keep-a-register.md) →

@@ -24,7 +24,7 @@ Keep your editor's AI helpers switched off for the course. The point is to under
 | 6 | [What production means for an agent](06-what-production-means-for-an-agent.md) | A run log, a spend limit, failures you'll notice, and the code version in every record. | 1 hour |
 | 7 | [Swap the model](07-swap-the-model.md) | A small harness that runs three models on the same task and scores the result, not the words. | 1.5 hours |
 | 8 | [When to break it up](08-when-to-break-it-up.md) | The agent in four files, each split for a pain you'll have felt, and tests that need no API. | 1.5 hours |
-| 9 | Keep a register | One file that says what each agent is, and a check that fails when the file and the code disagree. | coming |
+| 9 | [Keep a register](09-keep-a-register.md) | One file that says what your agent is, and three tests that fail when the file and the code disagree. | 1 hour |
 
 One agent, the whole way through. Each post ends with the same agent, slightly more grown up.
 

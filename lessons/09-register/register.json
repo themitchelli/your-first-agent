@@ -1,0 +1,24 @@
+{
+  "name": "file-organiser",
+  "purpose": "Tidies one folder: groups files into named subfolders and keeps notes in memory.md.",
+  "owner": "Steve Mitchell",
+  "runs_on": "My laptop, every morning at 7, started by cron through run.sh.",
+  "monthly_limit_usd": 2.00,
+
+  "model": "claude-haiku-4-5",
+  "instructions": "SYSTEM in agent.py",
+  "tools": {
+    "list_files": "read",
+    "read_file": "read",
+    "write_file": "write",
+    "move_file": "write"
+  },
+  "approval": "A person approves every write when run by hand. On the schedule, run.sh auto-approves them.",
+  "memory": "memory.md inside the workspace. The agent reads it at the start and rewrites it at the end.",
+  "trigger": "Schedule (run.sh), or by hand with main.py.",
+
+  "scores": [
+    {"date": "2026-09-26", "model": "claude-haiku-4-5", "score": "0.33-0.67", "runs": 3,
+     "tools.py": "2303edd6", "agent.py": "8e6366d4"}
+  ]
+}
