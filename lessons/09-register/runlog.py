@@ -14,7 +14,7 @@ RUN_LOG = HERE / "runs.jsonl"
 PRICE_PER_MILLION_USD = {"input": 1.00, "output": 5.00}     # Claude Haiku 4.5, as of September 2026
 
 def new_record(task):
-    return {"started": f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}", "task": task,
+    return {"agent": agent_id(), "started": f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}", "task": task,
             "version": code_version(), "tools": [], "input_tokens": 0, "output_tokens": 0, "result": "ok"}
 
 def spent_this_month():
@@ -27,6 +27,12 @@ def spent_this_month():
         if record["started"].startswith(this_month):
             total += record["cost_usd"]
     return total
+
+def agent_id():
+    try:
+        return json.loads((HERE / "register.json").read_text(encoding="utf-8"))["id"]
+    except Exception:
+        return "unregistered"
 
 def code_version():
     try:

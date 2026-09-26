@@ -190,6 +190,16 @@ def new_record(task):
 
 It's the same dictionary `main` used to build. Now the file that knows what a record looks like is the only one that creates one. If you add a field later, you change one place.
 
+**Checkpoint (free):** save `runlog.py`, then from `my-first-agent`:
+
+```bash
+python -c "import runlog; print(runlog.new_record('test'))"
+```
+
+You should see one line starting `{'started': ` with today's date and time, `'task': 'test'`, a `'version'` (a short git ID, or `'unknown (not a git repo)'`), and `'result': 'ok'` at the end. Don't try running `agent.py` yet: it still calls functions that have just moved, so it won't work again until split 4. That's expected.
+
+If the last line says `ModuleNotFoundError: No module named 'runlog'`, Python can't find the file. Look at the name in the sidebar, character by character: it must be `runlog.py`, not `runlog,py` or `runlog.py.txt`, and it must sit in `my-first-agent`, next to `agent.py`.
+
 ## Split 3: `agent.py`, just the loop
 
 **The pain:** remember the harness post. To drive the agent from another program, you had to pull the loop out of `main`, because `main` also read the command line, picked the approver and handled the log. The loop had several jobs tangled up with it. Now it gets exactly one.
@@ -227,7 +237,7 @@ Below `SYSTEM`, add:
 ```python
 def run(client, workspace, task, approve, record, report, model="claude-haiku-4-5"):
     memory_path = workspace / "memory.md"
-    memory = memory_path.read_text() if memory_path.exists() else "(no memory yet - first run)"
+    memory = memory_path.read_text(encoding="utf-8", errors="replace") if memory_path.exists() else "(no memory yet - first run)"
     messages = [{"role": "user", "content": f"Your memory from previous runs:\n{memory}\n\nToday's task: {task}"}]
 ```
 
@@ -276,6 +286,14 @@ Then the loop itself. It's your loop from the production post with four small ch
 Notice what's *not* here: no `try`, no `sys.exit`, no spend limit, no `input()`. The loop doesn't decide what failure means or what a run may spend. That's the caller's job.
 
 `agent.py` is now under 50 lines, and most of them are the loop you wrote in the very first build post.
+
+**Checkpoint (free):** save `agent.py`, then from `my-first-agent`:
+
+```bash
+python -c "import agent; print(agent.run)"
+```
+
+You should see `<function run at 0x...>`, with some number where the dots are. That proves the file loads and the loop is a function other files can call. It doesn't call the model: nothing runs until `main.py` exists. If you see `ModuleNotFoundError: No module named 'tools'`, `tools.py` from split 1 isn't saved next to `agent.py`. If you see `SyntaxError` or `IndentationError`, the last line names the line number to look at.
 
 ## Split 4: `main.py`, how the agent gets started
 
@@ -514,6 +532,16 @@ The fix is the payoff of the seams. The harness needed two things: a model it co
 
 In the sidebar, drag `harness.py`, `fixture` and `answer_key.json` out of the `harness` folder into `my-first-agent`, next to `main.py`. Then delete the `harness` folder, including the copy of `agent.py` and `demo` inside it. Your real agent is the only agent now.
 
+**Checkpoint (free):** check your terminal prompt ends in `my-first-agent`, not `harness`. If it says `harness`, type `cd ..` first. Then:
+
+```bash
+python -c "import harness; print(harness.grouping_score)"
+```
+
+You should see `<function grouping_score at 0x...>`. If the last line says `AttributeError: module 'harness' has no attribute 'grouping_score'`, the `harness` folder is still there. Python found the folder before the file. Delete the folder and run it again.
+
+**Don't run the harness yet.** It still has the old `run_once`, which calls the copy you just deleted. The next section changes it, and the checkpoint at the end of this section runs it.
+
 ### Give it a client and a record
 
 The harness used to call `agent.run(workspace, TASK, model=model, approve=always_yes, quiet=True)` and get a `stats` dictionary back. The real `run` is handed everything instead, so `run_once` changes shape. Replace the whole function with:
@@ -568,14 +596,14 @@ Last, at the top of the file, add `import anthropic` on its own line above `impo
 
 One honest note. Harness runs go through `agent.run` and never through `main.py`, so they're not written to `runs.jsonl` and don't count towards the monthly limit. That's right, because they're tests, not the agent's work, but it means the console spend limit from the production post is the only thing capping them. Check it's set.
 
-**Checkpoint:** the free test first, then the real one:
+**Checkpoint:** the free test first, then the real one. Both from `my-first-agent`:
 
 ```bash
 python -c "import json, harness as h; k = json.load(open('answer_key.json')); perfect = {n: g for g, ns in k.items() for n in ns}; print(h.grouping_score(perfect, k))"
 python harness.py 1
 ```
 
-The first prints `1.0`. The second prints the same table as the harness post, with the same kind of numbers, and it's now measuring the agent you actually run. From here on, any change to `tools.py`, `agent.py` or the instructions gets the same question asked of it: did the score move?
+The first prints `1.0`. The second prints the same table as the harness post, with the same kind of numbers, and it's now measuring the agent you actually run. If you ran these from inside the old `harness` folder before deleting it, they'd print numbers too, but for the old copy. That's why the folder has to go. From here on, any change to `tools.py`, `agent.py` or the instructions gets the same question asked of it: did the score move?
 
 ## When not to split
 
@@ -586,6 +614,16 @@ The next time you're unsure, ask the question from the start of this post: which
 ## Try this
 
 Add a fifth tool, `delete_file`, with approval, following the recipe from the build post. Notice which files you touch: `tools.py` for the function, its description and its route, and `test_agent.py` for a test that a declined delete leaves the file in place. You shouldn't need to open `agent.py` or `main.py` at all. If you do, ask why. That's how you'll know the split is working.
+
+## When it goes wrong
+
+The last line of the error is the one that matters.
+
+**`ModuleNotFoundError: No module named 'runlog'`** (or `'tools'`, or `'agent'`). The file isn't where Python looks, or its name is wrong. Every file in this post sits directly in `my-first-agent`, and every command runs from there. Check the name in the sidebar character by character: a comma instead of a dot, or a hidden `.txt` on the end, looks almost right.
+
+**`AttributeError: module 'harness' has no attribute 'grouping_score'`**. There's still a folder called `harness`, and Python found it instead of `harness.py`. Finish "Move the harness home" and delete the folder.
+
+**`NameError: name 'code_version' is not defined`** (or another function that moved) when you run `agent.py` in the middle of the post. Expected between split 2 and split 4: the functions have moved and nothing calls them from the new place yet. From split 4 on, run `main.py`, not `agent.py`.
 
 ---
 

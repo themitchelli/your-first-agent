@@ -10,12 +10,12 @@ You know, because you built it. But try answering these without opening the code
 
 That's the pain. Everything about your agent lives in your head and in 400 lines of Python. The fix is a **register**: one short file, next to the code, that says what the agent is. Organisations that run agents keep exactly this. It's the first thing a security team asks for, and usually the thing nobody has.
 
-A register nobody checks is out of date the first time someone adds a tool in a hurry. So half of this post is the file, and half is three new tests that fail when the file stops telling the truth. After this post the three records fit together:
+A register nobody checks is out of date the first time someone adds a tool in a hurry. So half of this post is the file, and half is four new tests that fail when the file stops telling the truth. After this post the three records fit together:
 
 | Record | Answers | Kept up to date by |
 |---|---|---|
-| `register.json` | What is this agent? | you, and three tests that fail when it's wrong |
-| `runs.jsonl` | What did it do? | the agent, every run |
+| `register.json` | What is this agent? | you, and four tests that fail when it's wrong |
+| `runs.jsonl` | What did it do? | the agent, every run, stamped with the register's id |
 | harness score | Did a change help? | you, recorded in the register |
 
 **Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Coming back after a break? `my-first-agent` is in your home folder (Finder: Go > Home). A new terminal forgets both the virtual environment and the key, so switch the environment on again (`source .venv/bin/activate` on Mac, `.venv\Scripts\Activate.ps1` on Windows) and set the key again. Both are in the setup post, steps 4 and 7. Start from your four files from the last post, or copy everything in `lessons/08-structure` from the course files into `my-first-agent`. There should be no `harness` folder any more: `harness.py` sits next to `main.py`. Run every command in this post from `my-first-agent`. Your finished files match `lessons/09-register`.
@@ -24,12 +24,29 @@ A register nobody checks is out of date the first time someone adds a tool in a 
 
 ## Step 1: write the register
 
-### 1a. Create the file
+### 1a. Give the agent an id
 
-In the sidebar, create a file called `register.json` in `my-first-agent`, next to `main.py`. JSON is the format you met in `answer_key.json`: labels in double quotes, a colon, then a value. Type this, with your own name as owner:
+Your agent has a name, `file-organiser`, but a name is a label, not an identity. Copy the project to build a second agent and you have two called `file-organiser`. Rename it and anything that pointed at the old name points at nothing. So the register gives the agent an **id**: a code that belongs to this agent and nothing else, and never changes, even when the name does.
+
+From `my-first-agent`, make one:
+
+```bash
+python -c "import uuid; print(uuid.uuid4())"
+```
+
+```
+57328a1c-9706-410f-8ba9-b46a2c42b4b8
+```
+
+`uuid` comes with Python. `uuid4()` makes a random id so long that nobody else, anywhere, will ever make the same one. Yours will be different from mine. Leave it in the terminal: you'll paste it in a moment.
+
+### 1b. Create the file
+
+In the sidebar, create a file called `register.json` in `my-first-agent`, next to `main.py`. JSON is the format you met in `answer_key.json`: labels in double quotes, a colon, then a value. Type this, with your own id pasted in place of mine and your own name as owner:
 
 ```json
 {
+  "id": "57328a1c-9706-410f-8ba9-b46a2c42b4b8",
   "name": "file-organiser",
   "purpose": "Tidies one folder: groups files into named subfolders and keeps notes in memory.md.",
   "owner": "Your Name",
@@ -58,17 +75,17 @@ If you're on Windows, `runs_on` should say Task Scheduler and `run.bat` instead.
 
 Save it.
 
-### 1b. What you just wrote down
+### 1c. What you just wrote down
 
 The file has three parts, separated by the blank lines.
 
-**About the agent:** what it's called, what it's for, who owns it, where it runs, and the most it may spend. The limit is the same number as `MONTHLY_LIMIT_USD` in `main.py`.
+**About the agent:** its id, what it's called, what it's for, who owns it, where it runs, and the most it may spend. The limit is the same number as `MONTHLY_LIMIT_USD` in `main.py`.
 
 **The five boxes:** model, instructions, tools, memory and trigger, the framework from the first post. Each tool has a permission word: `read` if it only looks, `write` if it changes files. `approval` says who approves the writes.
 
 Read the `approval` line again. It's the most important sentence in the file. Your agent has written files without asking anyone every morning since the schedule post. That was always true. Now it's written down where someone else can see it. Writing a register usually turns up one sentence like this, and finding it is the point.
 
-**Scores:** empty for now. Step 3 fills it.
+**Scores:** empty for now. Step 4 fills it.
 
 **Checkpoint:** from `my-first-agent`, check the file loads:
 
@@ -86,7 +103,8 @@ Some of the register can be checked by code and some can't. No test can tell whe
 |---|---|
 | `tools` | test 4: the names match `tools.TOOLS` |
 | `model`, `monthly_limit_usd` | test 5: the agent asks for that model, `main.py` has that limit |
-| `scores` | test 6: the latest score was measured on the code that runs now |
+| `id` | test 6: every new line in the run log carries it |
+| `scores` | test 7: the latest score was measured on the code that runs now |
 | everything else | you, when you read it |
 
 It's the same rule as the tools in the build post: instructions ask, tools enforce. Here the prose asks and the tests enforce. The tests go in `test_agent.py`, where they run with the other three for free.
@@ -115,12 +133,13 @@ from types import SimpleNamespace
 import agent
 import harness
 import main
+import runlog
 import tools
 
 HERE = pathlib.Path(__file__).parent
 ```
 
-`json` reads the register. `main` is there so the test can see `MONTHLY_LIMIT_USD`. Importing `main.py` doesn't run the agent, because its last lines only call `main()` when you run the file directly. `harness` is for step 3. `HERE` is the folder the test file is in, the same trick `runlog.py` and `harness.py` use, so the tests find `register.json` wherever you run them from.
+`json` reads the register. `main` is there so the test can see `MONTHLY_LIMIT_USD`, and `runlog` is for step 3. Importing `main.py` doesn't run the agent, because its last lines only call `main()` when you run the file directly. `harness` is for step 4. `HERE` is the folder the test file is in, the same trick `runlog.py` and `harness.py` use, so the tests find `register.json` wherever you run them from.
 
 ### 2b. Test 4: the register lists exactly the agent's tools
 
@@ -194,7 +213,66 @@ AssertionError: the agent asks for claude-haiku-4-5, the register says claude-so
 
 Change it back and save.
 
-## Step 3: a score belongs to a version
+## Step 3: one id, on every record
+
+The id is only worth having if something uses it. Right now each line in `runs.jsonl` says when a run started, what it cost and which code ran, but not *which agent* it was. With one agent that's obvious. With two, their records look the same. So every new record gets stamped with the register's id, and "what did this agent do?" becomes a search for one string.
+
+### 3a. Stamp the id on every record
+
+In `runlog.py`, find `def code_version():`. Above it, at the left margin, add:
+
+```python
+def agent_id():
+    try:
+        return json.loads((HERE / "register.json").read_text(encoding="utf-8"))["id"]
+    except Exception:
+        return "unregistered"
+```
+
+It reads the id from the register. If there's no register, or no id in it, the record says `"unregistered"` instead of crashing the run. That's the same choice `code_version` makes when there's no git: the run still happens, and the record says honestly what's missing.
+
+Then change the first two lines of `new_record` from:
+
+```python
+def new_record(task):
+    return {"started": f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}", "task": task,
+```
+
+to:
+
+```python
+def new_record(task):
+    return {"agent": agent_id(), "started": f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}", "task": task,
+```
+
+The third line, starting `"version": code_version()`, stays as it is. Save.
+
+**Checkpoint (free):** from `my-first-agent`:
+
+```bash
+python -c "import runlog; print(runlog.new_record('test')['agent'])"
+```
+
+You should see your id, the same one as in `register.json`. If you see `unregistered`, the register didn't load: run the step 1 checkpoint again. Your next real run will write the id into `runs.jsonl`. Older lines won't have it, and that's fine.
+
+### 3b. Test 6: every run record carries the register's id
+
+Below `test_register_matches_the_model_and_the_spend_limit` in `test_agent.py`, add:
+
+```python
+def test_every_run_record_carries_the_register_id():
+    register_id = read_register()["id"]
+    assert register_id, "the register's id is empty. Make one with: python -c \"import uuid; print(uuid.uuid4())\""
+    stamped = runlog.new_record("Check")["agent"]
+    assert stamped == register_id, f"new run records say agent {stamped}, the register's id is {register_id}"
+```
+
+- The first check catches an id left empty.
+- The second makes a record the way `main.py` does and checks it carries the same id. If someone removes the stamp from `new_record` later, this is the test that notices. The `\"` inside the message is a double quote inside a string that's already in double quotes. The backslash tells Python it's part of the text.
+
+**Checkpoint:** run `python test_agent.py` from `my-first-agent`. Six "passed" lines, then "All 6 tests passed. No API calls, no cost."
+
+## Step 4: a score belongs to a version
 
 In the harness post you measured your agent, and the numbers went nowhere. Here's why that matters. Next month you reword the instructions and the harness says 0.94. Is that worse than before? You can't know unless you wrote down the last score and *which code it was for*. A score with no version attached tells you nothing.
 
@@ -211,7 +289,7 @@ ce06092f
 
 One exclamation mark, and nothing in common. That's what lets a test tell whether the code changed since the last score.
 
-### 3a. Teach the harness to print its fingerprints
+### 4a. Teach the harness to print its fingerprints
 
 In `harness.py`, find `def fingerprint(path):`. Below that function and above `def where_did_files_go`, at the left margin, add:
 
@@ -247,9 +325,9 @@ python -c "import pathlib, harness; print(harness.code_fingerprint(pathlib.Path(
 
 Eight letters and numbers. Yours won't match anyone else's, because you typed your own `tools.py`. `harness.py` should be about 109 lines. Compare with `lessons/09-register/harness.py`.
 
-### 3b. Test 6: the latest score is for the code that runs now
+### 4b. Test 7: the latest score is for the code that runs now
 
-Below `test_register_matches_the_model_and_the_spend_limit` in `test_agent.py`, add:
+Below `test_every_run_record_carries_the_register_id` in `test_agent.py`, add:
 
 ```python
 def test_register_score_was_measured_on_the_code_that_runs():
@@ -267,15 +345,15 @@ def test_register_score_was_measured_on_the_code_that_runs():
 - The newest score goes first in the list, so `scores[0]` is the latest.
 - For each of the two files, the fingerprint recorded with the score has to match the file as it is now.
 
-**Checkpoint: this one is supposed to fail.** Run `python test_agent.py` from `my-first-agent`. Five tests pass, then the last line reads:
+**Checkpoint: this one is supposed to fail.** Run `python test_agent.py` from `my-first-agent`. Six tests pass, then the last line reads:
 
 ```
 AssertionError: the register has no scores yet. Run the harness and add one to 'scores'.
 ```
 
-That's the test doing its job. There's no score in the register yet, so it can't say the score is current. `test_agent.py` should be about 113 lines. Compare with `lessons/09-register/test_agent.py`.
+That's the test doing its job. There's no score in the register yet, so it can't say the score is current. `test_agent.py` should be about 120 lines. Compare with `lessons/09-register/test_agent.py`.
 
-### 3c. Record a score
+### 4c. Record a score
 
 From `my-first-agent`, run the harness with its default three runs per model:
 
@@ -304,9 +382,9 @@ to:
 
 using today's date, your Haiku score and your two fingerprints. Mine are shown. Yes, my Haiku scored between 0.33 and 0.67 that day, even though a single run on my own copy earlier had scored 1.00. That's why the harness runs three times, and why the register records the range, not the best run. Save.
 
-**Checkpoint: "All 6 tests passed. No API calls, no cost."** (7 with last post's `delete_file` test.)
+**Checkpoint: "All 7 tests passed. No API calls, no cost."** (8 with last post's `delete_file` test.)
 
-## Step 4: the loop from now on
+## Step 5: the loop from now on
 
 Now try the loop once, for real. In `agent.py`, find the first line of `SYSTEM` and change:
 
@@ -320,7 +398,7 @@ to:
     "You are a careful, tidy file assistant working inside one folder. "
 ```
 
-Save, and run `python test_agent.py` from `my-first-agent`. Test 6 fails:
+Save, and run `python test_agent.py` from `my-first-agent`. Test 7 fails:
 
 ```
 AssertionError: agent.py has changed since the latest score was measured (the register says 8e6366d4, the file is now c9abdfed). Run the harness and add a new score at the top of 'scores'.
@@ -341,26 +419,30 @@ If you use git (the version control side post), commit `register.json` with the 
 
 ## Where this stops
 
-A register in a JSON file works for one person with a few agents. At work, the same idea becomes an inventory kept by a security or risk team, and the tests become a gate that stops an agent going live when its register is wrong. There are whole products for this. The fields in those products are the same questions you just answered: what is it, who owns it, what can it touch, who approves, what does it cost, which version is live and how good is it. If someone at work asks for "an agent register", you know what goes in one, and why it has to be checked.
+A register in a JSON file works for one person with a few agents. At work, the same idea becomes an inventory kept by a security or risk team, and the tests become a gate that stops an agent going live when its register is wrong. There are whole products for this. Every agent gets an id there too, and the id is what the inventory, the logs and the bill all use to mean the same agent. The fields in those products are the same questions you just answered: what is it, who owns it, what can it touch, who approves, what does it cost, which version is live and how good is it. If someone at work asks for "an agent register", you know what goes in one, and why it has to be checked.
 
 ## Try this
 
-Add the `delete_file` tool from the last post's Try this, if you haven't yet. Before you touch `register.json`, run the tests and read which ones fail and what they say. Then update the register until they pass. Test 4 will want a new line under `tools`. Test 6 will want a new score, because `tools.py` changed. No test will ask you to reread `approval`, `purpose` or `runs_on`, but a delete tool changes what your agent is allowed to do, so read them anyway. That's the part of a register only a person can keep true.
+Add the `delete_file` tool from the last post's Try this, if you haven't yet. Before you touch `register.json`, run the tests and read which ones fail and what they say. Then update the register until they pass. Test 4 will want a new line under `tools`. Test 7 will want a new score, because `tools.py` changed. No test will ask you to reread `approval`, `purpose` or `runs_on`, but a delete tool changes what your agent is allowed to do, so read them anyway. That's the part of a register only a person can keep true.
 
 ## When it goes wrong
 
 The last line of the error is the one that matters.
 
-**`json.decoder.JSONDecodeError: Illegal trailing comma before end of object: line 14 column 25`** (Python 3.13 and later) or **`json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 15 column 3`** (Python 3.12 and earlier). There's a comma after the last item in a block. Go to the line it names, or the one above, and delete the comma before the `}`.
+**`json.decoder.JSONDecodeError: Illegal trailing comma before end of object: line 15 column 25`** (Python 3.13 and later) or **`json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 16 column 3`** (Python 3.12 and earlier). There's a comma after the last item in a block. Go to the line it names, or the one above, and delete the comma before the `}`.
 
 **`FileNotFoundError: [Errno 2] No such file or directory: '.../register.json'`**. The file isn't next to `test_agent.py`, or it's called something else. Check the sidebar: it should say `register.json` exactly, in `my-first-agent`, not inside `demo`.
 
+**`KeyError: 'id'`**. The register has no `"id"` line. Step 1a makes one.
+
+**`KeyError: 'agent'`**. `new_record` in `runlog.py` doesn't stamp the id yet. Step 3a.
+
 **`KeyError: 'tools.py'`**. The score entry is missing one of the fingerprint labels, or has a typo in it. The labels are `"tools.py"` and `"agent.py"`, with the `.py`.
 
-**`AttributeError: module 'harness' has no attribute 'code_fingerprint'`**. Either step 3a isn't saved yet, or `harness.py` is still inside a `harness` folder and Python found the folder instead of the file. If there's a folder, do the last section of the previous post, "One agent, not two", first.
+**`AttributeError: module 'harness' has no attribute 'code_fingerprint'`**. Either step 4a isn't saved yet, or `harness.py` is still inside a `harness` folder and Python found the folder instead of the file. If there's a folder, do the last section of the previous post, "One agent, not two", first.
 
 **`ModuleNotFoundError: No module named 'harness'`**. There's no `harness.py` in `my-first-agent` at all. Copy it from `lessons/08-structure` in the course files, with `fixture` and `answer_key.json`.
 
 ---
 
-← [Part 8](08-when-to-break-it-up.md) · [Series page](README.md)
+← [Part 8](08-when-to-break-it-up.md) · [Series page](README.md) · [Part 10](10-what-you-built.md) →

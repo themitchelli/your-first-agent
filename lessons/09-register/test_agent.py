@@ -11,6 +11,7 @@ from types import SimpleNamespace
 import agent
 import harness
 import main
+import runlog
 import tools
 
 HERE = pathlib.Path(__file__).parent
@@ -94,6 +95,12 @@ def test_register_matches_the_model_and_the_spend_limit():
         f"the agent asks for {fake.sent[0]['model']}, the register says {register['model']}")
     assert main.MONTHLY_LIMIT_USD == register["monthly_limit_usd"], (
         f"main.py's limit is {main.MONTHLY_LIMIT_USD}, the register says {register['monthly_limit_usd']}")
+
+def test_every_run_record_carries_the_register_id():
+    register_id = read_register()["id"]
+    assert register_id, "the register's id is empty. Make one with: python -c \"import uuid; print(uuid.uuid4())\""
+    stamped = runlog.new_record("Check")["agent"]
+    assert stamped == register_id, f"new run records say agent {stamped}, the register's id is {register_id}"
 
 def test_register_score_was_measured_on_the_code_that_runs():
     scores = read_register()["scores"]
