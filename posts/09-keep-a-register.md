@@ -69,11 +69,11 @@ In the sidebar, create a file called `register.json` in `my-first-agent`, next t
 }
 ```
 
+**Save the file now** (Cmd+S on Mac, Ctrl+S on Windows), and check the white dot on its tab has gone. The checkpoint below reads the file from disk, and an unsaved file is empty there.
+
 Two JSON rules catch everyone. Every line in a block ends with a comma **except the last one** before a closing `}` or `]`. And JSON has no comments, so you can't leave yourself a `#` note in here. That's why each value is a full sentence: the register has to explain itself.
 
-If you're on Windows, `runs_on` should say Task Scheduler and `run.bat` instead. If you added `delete_file` in the last post's Try this, add a line for it under `move_file`: `"delete_file": "write"`, and put a comma after `"move_file": "write"`.
-
-Save it.
+If you're on Windows, `runs_on` should say Task Scheduler and `run.bat` instead. If you added `delete_file` in the last post's Try this, add a line for it under `move_file`: `"delete_file": "write"`, and put a comma after `"move_file": "write"`. Save again after any change.
 
 ### 1c. What you just wrote down
 
@@ -428,6 +428,8 @@ Add the `delete_file` tool from the last post's Try this, if you haven't yet. Be
 ## When it goes wrong
 
 The last line of the error is the one that matters.
+
+**`json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)`**. The file is empty on disk. Almost always it's typed but not saved: look for the white dot on the `register.json` tab, save, and run the command again.
 
 **`json.decoder.JSONDecodeError: Illegal trailing comma before end of object: line 15 column 25`** (Python 3.13 and later) or **`json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 16 column 3`** (Python 3.12 and earlier). There's a comma after the last item in a block. Go to the line it names, or the one above, and delete the comma before the `}`.
 
