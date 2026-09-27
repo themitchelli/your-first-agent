@@ -71,6 +71,8 @@ Those are bigger versions of things you've built. You'll recognise them.
 
 Tell someone what you built. Not the code. Explain the five boxes and the five production questions to someone who hasn't seen this series, using your own agent as the example. If you can do that in ten minutes, you understand it. If you get stuck, the post that covers that part is still here.
 
+*Further reading: Bob Belderbos's [There Is No Magic: An AI Agent in 60 Lines of Python](https://belderbos.dev/blog/build-minimal-ai-agent-python/) builds the same loop in one sitting, with a fake model and no API key. You've built the long version now, so it's a good way to see the loop from another angle.*
+
 ---
 
 ← [Part 9](09-keep-a-register.md) · [Series page](README.md)
