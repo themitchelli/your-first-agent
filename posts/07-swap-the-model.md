@@ -37,7 +37,6 @@ Here's the whole post in one picture. The five boxes from the first post are ins
 flowchart TB
     subgraph H[Harness]
         direction TB
-        F[Fixture<br/>fresh copy every run]
         C[Two seams<br/>which model, who approves]
         subgraph A[The agent, unchanged]
             direction TB
@@ -45,10 +44,11 @@ flowchart TB
             M <--> W[Tools]
             M <--> R[Memory]
         end
-        F --> A
+        F[Fixture folder<br/>fresh copy every run]
         C -.-> M
         C -.-> W
-        A --> S[Score the folder<br/>not the words]
+        W <--> F
+        F --> S[Score the folder<br/>not the words]
         S --> Tb[Table<br/>score, cost, time]
     end
 ```
