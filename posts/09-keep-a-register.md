@@ -18,7 +18,7 @@ A register nobody checks is out of date the first time someone adds a tool in a 
 | `runs.jsonl` | What did it do? | the agent, every run, stamped with the register's id |
 | harness score | Did a change help? | you, recorded in the register |
 
-**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Coming back after a break? `my-first-agent` is in your home folder (Finder: Go > Home). A new terminal forgets both the virtual environment and the key, so switch the environment on again (`source .venv/bin/activate` on Mac, `.venv\Scripts\Activate.ps1` on Windows) and set the key again. Both are in the setup post, steps 4 and 7. Start from your four files from the last post, or copy everything in `lessons/08-structure` from the course files into `my-first-agent`. There should be no `harness` folder any more: `harness.py` sits next to `main.py`. Run every command in this post from `my-first-agent`. Your finished files match `lessons/09-register`.
+**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Coming back after a break? `my-first-agent` is in your home folder (Finder: Go > Home on Mac; File Explorer: `C:\Users\<your name>` on Windows). A new terminal forgets both the virtual environment and the key, so switch the environment on again (`source .venv/bin/activate` on Mac, `.venv\Scripts\Activate.ps1` on Windows) and set the key again. Both are in the setup post, steps 4 and 7. Start from your four files from the last post, or copy everything in `lessons/08-structure` from the course files into `my-first-agent`. There should be no `harness` folder any more: `harness.py` sits next to `main.py`. Run every command in this post from `my-first-agent`. Your finished files match `lessons/09-register`. Step 4 runs the harness once, which costs about $1.20.
 
 **Checkpoint before you start:** from `my-first-agent`, run `python test_agent.py`. You should see "All 3 tests passed." If you did the last post's Try this, you'll see 4. Either is fine.
 
@@ -71,9 +71,15 @@ In the sidebar, create a file called `register.json` in `my-first-agent`, next t
 
 **Save the file now** (Cmd+S on Mac, Ctrl+S on Windows), and check the white dot on its tab has gone. The checkpoint below reads the file from disk, and an unsaved file is empty there.
 
-Two JSON rules catch everyone. Every line in a block ends with a comma **except the last one** before a closing `}` or `]`. And JSON has no comments, so you can't leave yourself a `#` note in here. That's why each value is a full sentence: the register has to explain itself.
+Two JSON rules catch everyone. Every value inside `{ }` is followed by a comma **except the last one** before the closing `}` or `]`. And JSON has no comments, so you can't leave yourself a `#` note in here. That's why each value is a full sentence: the register has to explain itself.
 
-If you're on Windows, `runs_on` should say Task Scheduler and `run.bat` instead. If you added `delete_file` in the last post's Try this, add a line for it under `move_file`: `"delete_file": "write"`, and put a comma after `"move_file": "write"`. Save again after any change.
+If you're on Windows, change the `runs_on` line to:
+
+```json
+  "runs_on": "My laptop, every morning at 7, started by Task Scheduler through run.bat.",
+```
+
+If you added `delete_file` in the last post's Try this, add a line for it under `move_file`: `"delete_file": "write"`, and put a comma after `"move_file": "write"`. Save again after any change.
 
 ### 1c. What you just wrote down
 
@@ -103,7 +109,7 @@ Some of the register can be checked by code and some can't. No test can tell whe
 |---|---|
 | `tools` | test 4: the names match `tools.TOOLS` |
 | `model`, `monthly_limit_usd` | test 5: the agent asks for that model, `main.py` has that limit |
-| `id` | test 6: every new line in the run log carries it |
+| `id` | test 6: a new run record carries it |
 | `scores` | test 7: the latest score was measured on the code that runs now |
 | everything else | you, when you read it |
 
@@ -140,6 +146,8 @@ HERE = pathlib.Path(__file__).parent
 ```
 
 `json` reads the register. `main` is there so the test can see `MONTHLY_LIMIT_USD`, and `runlog` is for step 3. Importing `main.py` doesn't run the agent, because its last lines only call `main()` when you run the file directly. `harness` is for step 4. `HERE` is the folder the test file is in, the same trick `runlog.py` and `harness.py` use, so the tests find `register.json` wherever you run them from.
+
+**Checkpoint:** save `test_agent.py`, then from `my-first-agent` run `python test_agent.py`. No new test exists yet, so you should still see "All 3 tests passed." (4 with last post's `delete_file` test.) If you see `ModuleNotFoundError: No module named 'harness'`, "When it goes wrong" at the end of this post has the fix.
 
 ### 2b. Test 4: the register lists exactly the agent's tools
 
@@ -183,7 +191,7 @@ Put the line back, with the comma after `"write_file": "write"`, and save.
 
 The register says `claude-haiku-4-5`. How does a test find out which model the agent really uses? Ask it. You already have a fake client that remembers everything the agent sends. Run the loop once with a fake reply, then look at the model in the request.
 
-Below `test_register_lists_exactly_the_agents_tools`, add:
+Below the end of `test_register_lists_exactly_the_agents_tools` and above `if __name__ == "__main__":`, at the left margin, add:
 
 ```python
 def test_register_matches_the_model_and_the_spend_limit():
@@ -245,7 +253,9 @@ def new_record(task):
     return {"agent": agent_id(), "started": f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}", "task": task,
 ```
 
-The third line, starting `"version": code_version()`, stays as it is. Save.
+The third line, starting `"version": code_version()`, stays as it is.
+
+**Save the file now** (Cmd+S on Mac, Ctrl+S on Windows), and check the white dot on its tab has gone.
 
 **Checkpoint (free):** from `my-first-agent`:
 
@@ -253,22 +263,22 @@ The third line, starting `"version": code_version()`, stays as it is. Save.
 python -c "import runlog; print(runlog.new_record('test')['agent'])"
 ```
 
-You should see your id, the same one as in `register.json`. If you see `unregistered`, the register didn't load: run the step 1 checkpoint again. Your next real run will write the id into `runs.jsonl`. Older lines won't have it, and that's fine.
+You should see your id, the same one as in `register.json`. If you see `unregistered`, the register didn't load: run the step 1 checkpoint again. Your next real run will write the id into `runs.jsonl`. Older lines won't have it, and that's fine. `runlog.py` should be about 56 lines. Compare with `lessons/09-register/runlog.py`.
 
 ### 3b. Test 6: every run record carries the register's id
 
-Below `test_register_matches_the_model_and_the_spend_limit` in `test_agent.py`, add:
+In `test_agent.py`, below the end of `test_register_matches_the_model_and_the_spend_limit` and above `if __name__ == "__main__":`, at the left margin, add:
 
 ```python
 def test_every_run_record_carries_the_register_id():
     register_id = read_register()["id"]
     assert register_id, "the register's id is empty. Make one with: python -c \"import uuid; print(uuid.uuid4())\""
-    stamped = runlog.new_record("Check")["agent"]
+    stamped = runlog.new_record("Check").get("agent", "nothing")
     assert stamped == register_id, f"new run records say agent {stamped}, the register's id is {register_id}"
 ```
 
 - The first check catches an id left empty.
-- The second makes a record the way `main.py` does and checks it carries the same id. If someone removes the stamp from `new_record` later, this is the test that notices. The `\"` inside the message is a double quote inside a string that's already in double quotes. The backslash tells Python it's part of the text.
+- The second makes a record the way `main.py` does and checks it carries the same id. If someone removes the stamp from `new_record` later, this is the test that notices. `.get("agent", "nothing")` reads the `agent` label if it's there and gives `"nothing"` if it isn't, so a missing stamp fails with this test's message instead of a bare `KeyError`. The `\"` inside the message is a double quote inside a string that's already in double quotes. The backslash tells Python it's part of the text.
 
 **Checkpoint:** run `python test_agent.py` from `my-first-agent`. Six "passed" lines, then "All 6 tests passed. No API calls, no cost."
 
@@ -305,17 +315,19 @@ def code_fingerprint(path):
 Then, at the bottom of `main` in `harness.py`, change:
 
 ```python
-    print(f"\nscore: lowest-highest over {runs} runs (1.00 = perfect grouping). Other columns: average per run.")
+    print(f"\nscore: lowest-highest over {runs} run(s) (1.00 = perfect grouping). Other columns: average per run.")
 ```
 
 to:
 
 ```python
-    print(f"\nscore: lowest-highest over {runs} runs (1.00 = perfect grouping). Other columns: average per run.")
+    print(f"\nscore: lowest-highest over {runs} run(s) (1.00 = perfect grouping). Other columns: average per run.")
     print(f"measured on: tools.py {code_fingerprint(HERE / 'tools.py')}  agent.py {code_fingerprint(HERE / 'agent.py')}")
 ```
 
 The new line sits level with the one above, four spaces in. Now every harness run tells you which code it measured.
+
+**Save the file now** (Cmd+S on Mac, Ctrl+S on Windows), and check the white dot on its tab has gone.
 
 **Checkpoint (free):** from `my-first-agent`:
 
@@ -323,11 +335,11 @@ The new line sits level with the one above, four spaces in. Now every harness ru
 python -c "import pathlib, harness; print(harness.code_fingerprint(pathlib.Path('tools.py')))"
 ```
 
-Eight letters and numbers. Yours won't match anyone else's, because you typed your own `tools.py`. `harness.py` should be about 109 lines. Compare with `lessons/09-register/harness.py`.
+Eight letters and numbers. If you copied the course files, you'll see `2303edd6`, the same as mine: same contents, same fingerprint. If you typed your own, even one different space gives a different code. `harness.py` should be about 105 lines. Compare with `lessons/09-register/harness.py`.
 
 ### 4b. Test 7: the latest score is for the code that runs now
 
-Below `test_every_run_record_carries_the_register_id` in `test_agent.py`, add:
+In `test_agent.py`, below the end of `test_every_run_record_carries_the_register_id` and above `if __name__ == "__main__":`, at the left margin, add:
 
 ```python
 def test_register_score_was_measured_on_the_code_that_runs():
@@ -380,7 +392,9 @@ to:
   ]
 ```
 
-using today's date, your Haiku score and your two fingerprints. Mine are shown. Yes, my Haiku scored between 0.33 and 0.67 that day, even though a single run on my own copy earlier had scored 1.00. That's why the harness runs three times, and why the register records the range, not the best run. Save.
+using today's date, your Haiku score and your two fingerprints. Mine are shown. Yes, my Haiku scored between 0.33 and 0.67 that day, even though a single run on my own copy earlier had scored 1.00. That's why the harness runs three times, and why the register records the range, not the best run.
+
+**Save the file now** (Cmd+S on Mac, Ctrl+S on Windows), and check the white dot on its tab has gone.
 
 **Checkpoint: "All 7 tests passed. No API calls, no cost."** (8 with last post's `delete_file` test.)
 
@@ -404,16 +418,27 @@ Save, and run `python test_agent.py` from `my-first-agent`. Test 7 fails:
 AssertionError: agent.py has changed since the latest score was measured (the register says 8e6366d4, the file is now c9abdfed). Run the harness and add a new score at the top of 'scores'.
 ```
 
-Your fingerprints will differ. The message is the loop you'll follow from now on:
+Yours match mine only if your files are exactly the course files. The message is the loop you'll follow from now on:
 
 1. Change the agent.
 2. The tests tell you the register's score is out of date.
 3. Run the harness.
 4. Add the new score **at the top** of `scores`, with a comma after its closing `}`. Leave the old one below it.
 
-Then "is this version better than the last?" has an answer: compare the top two entries. They sit next to each other in the file, each tied to the code it measured.
+Then "is this version better than the last?" has an answer: compare the top two entries. They sit next to each other in the file, each tied to the code it measured. After a second harness run, `scores` looks like this, with your date and your new score filled in:
 
-Try it, or put the line back the way it was and save. The tests pass again, because the fingerprint only depends on what's in the file. Undo the change and you're back on the version that was measured.
+```json
+  "scores": [
+    {"date": "today's date", "model": "claude-haiku-4-5", "score": "your new score", "runs": 3,
+     "tools.py": "2303edd6", "agent.py": "c9abdfed"},
+    {"date": "2026-09-26", "model": "claude-haiku-4-5", "score": "0.33-0.67", "runs": 3,
+     "tools.py": "2303edd6", "agent.py": "8e6366d4"}
+  ]
+```
+
+The comma after the first entry's `}` is the one that's easy to miss. Only `agent.py` changed, so only its fingerprint is new.
+
+Trying it costs another harness run, about $1.20. To skip it, put the line in `agent.py` back the way it was and save. The tests pass again, because the fingerprint only depends on what's in the file. Undo the change and you're back on the version that was measured.
 
 If you use git (the version control side post), commit `register.json` with the code. Git then keeps every earlier version of the register too.
 
@@ -423,7 +448,7 @@ A register in a JSON file works for one person with a few agents. At work, the s
 
 ## Try this
 
-Add the `delete_file` tool from the last post's Try this, if you haven't yet. Before you touch `register.json`, run the tests and read which ones fail and what they say. Then update the register until they pass. Test 4 will want a new line under `tools`. Test 7 will want a new score, because `tools.py` changed. No test will ask you to reread `approval`, `purpose` or `runs_on`, but a delete tool changes what your agent is allowed to do, so read them anyway. That's the part of a register only a person can keep true.
+Add the `delete_file` tool from the last post's Try this, if you haven't yet. Before you touch `register.json`, run the tests and read what they say. They stop at the first failure, so the problems arrive one at a time. Test 4 comes first: it wants a new line under `tools`. Fix that and run them again. Now test 7 wants a new score, because `tools.py` changed, and that means another harness run (about $1.20). No test will ask you to reread `approval`, `purpose` or `runs_on`, but a delete tool changes what your agent is allowed to do, so read them anyway. That's the part of a register only a person can keep true.
 
 ## When it goes wrong
 
@@ -433,11 +458,13 @@ The last line of the error is the one that matters.
 
 **`json.decoder.JSONDecodeError: Illegal trailing comma before end of object: line 15 column 25`** (Python 3.13 and later) or **`json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 16 column 3`** (Python 3.12 and earlier). There's a comma after the last item in a block. Go to the line it names, or the one above, and delete the comma before the `}`.
 
+**`json.decoder.JSONDecodeError: Expecting ',' delimiter: line 14 column 5`**. A comma is missing. Look at the end of the line above the one it names, and add the comma there.
+
 **`FileNotFoundError: [Errno 2] No such file or directory: '.../register.json'`**. The file isn't next to `test_agent.py`, or it's called something else. Check the sidebar: it should say `register.json` exactly, in `my-first-agent`, not inside `demo`.
 
 **`KeyError: 'id'`**. The register has no `"id"` line. Step 1a makes one.
 
-**`KeyError: 'agent'`**. `new_record` in `runlog.py` doesn't stamp the id yet. Step 3a.
+**`KeyError: 'agent'`** from the step 3a checkpoint, or **`AssertionError: new run records say agent nothing, the register's id is ...`** from test 6. `new_record` in `runlog.py` doesn't stamp the id yet. Step 3a.
 
 **`KeyError: 'tools.py'`**. The score entry is missing one of the fingerprint labels, or has a typo in it. The labels are `"tools.py"` and `"agent.py"`, with the `.py`.
 

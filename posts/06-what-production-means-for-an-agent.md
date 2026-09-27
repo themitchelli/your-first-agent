@@ -129,7 +129,7 @@ Your file should be about 185 lines. Not what you expected? Compare it with `les
 
 The 20-round cap stops one run from spinning forever. Nothing stops a month of runs from adding up, or a bug from firing the agent a thousand times.
 
-Here's why I care. In August 2026 one of my own API keys burned through $103 of credit in eighty minutes on a Friday evening, while I was doing something else entirely. I found out nine days later, when I went to use the account and the money was gone. The console's logs told me which key and which night. Nothing told me while it was happening, because I'd never set a limit.
+Here's why I care. In August 2026 one of my own API keys burned through $103 of credit in eighty minutes on a Saturday evening, while I was doing something else entirely. I found out nine days later, when I went to use the account and the money was gone. The console's logs told me which key and which night. Nothing told me while it was happening, because I'd never set a limit.
 
 Two fixes, both cheap.
 

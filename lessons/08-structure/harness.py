@@ -3,10 +3,6 @@
 Same agent, same task, same tools, same messy folder. Only the model changes.
 Each model runs several times, because one run proves nothing.
 
-Since the structure post this drives the real agent (agent.run), not a copy.
-Harness runs are not written to runs.jsonl, so they don't count towards the
-monthly limit in main.py. The spend limit in the Anthropic console still applies.
-
 Run:  python harness.py            (3 models x 3 runs, roughly $1 as of Sept 2026)
       python harness.py 1          (1 run each, for a quick look)
 
@@ -98,7 +94,7 @@ def main():
         mean = lambda key: sum(r[key] for r in results) / runs
         print(f"{model:<18} {min(scores):.2f}-{max(scores):.2f}  ${mean('cost'):.3f} "
               f"{mean('seconds'):>6.0f} {mean('tool_calls'):>6.0f} {mean('approvals'):>9.0f}")
-    print(f"\nscore: lowest-highest over {runs} runs (1.00 = perfect grouping). Other columns: average per run.")
+    print(f"\nscore: lowest-highest over {runs} run(s) (1.00 = perfect grouping). Other columns: average per run.")
 
 if __name__ == "__main__":
     main()

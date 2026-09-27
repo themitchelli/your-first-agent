@@ -398,7 +398,7 @@ Why pairs? Because folder names don't matter. "Invoices", "Bills" and "Money" ar
 Before trusting a score, test it. In the terminal:
 
 ```bash
-python -c "import json, harness as h; k = json.load(open('answer_key.json')); perfect = {n: g for g, ns in k.items() for n in ns}; print(h.grouping_score(perfect, k))"
+python -c "import json, harness as h; k = json.load(open('answer_key.json', encoding='utf-8')); perfect = {n: g for g, ns in k.items() for n in ns}; print(h.grouping_score(perfect, k))"
 ```
 
 That builds a perfect placement straight from the answer key and scores it. **Checkpoint: it prints `1.0`.**
@@ -449,7 +449,7 @@ Finally, at the very bottom of the file, below `run_once`:
 ```python
 def main():
     runs = int(sys.argv[1]) if len(sys.argv) > 1 else 3
-    answer_key = json.loads((HERE / "answer_key.json").read_text())
+    answer_key = json.loads((HERE / "answer_key.json").read_text(encoding="utf-8"))
     print(f"{'model':<18} {'score':>11} {'cost':>8} {'secs':>6} {'tools':>6} {'approvals':>9}")
     for model in MODELS:
         results = [run_once(model, answer_key) for _ in range(runs)]
@@ -457,7 +457,7 @@ def main():
         mean = lambda key: sum(r[key] for r in results) / runs
         print(f"{model:<18} {min(scores):.2f}-{max(scores):.2f}  ${mean('cost'):.3f} "
               f"{mean('seconds'):>6.0f} {mean('tool_calls'):>6.0f} {mean('approvals'):>9.0f}")
-    print(f"\nscore: lowest-highest over {runs} runs (1.00 = perfect grouping). Other columns: average per run.")
+    print(f"\nscore: lowest-highest over {runs} run(s) (1.00 = perfect grouping). Other columns: average per run.")
 
 if __name__ == "__main__":
     main()

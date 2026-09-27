@@ -87,7 +87,7 @@ def main():
         mean = lambda key: sum(r[key] for r in results) / runs
         print(f"{model:<18} {min(scores):.2f}-{max(scores):.2f}  ${mean('cost'):.3f} "
               f"{mean('seconds'):>6.0f} {mean('tool_calls'):>6.0f} {mean('approvals'):>9.0f}")
-    print(f"\nscore: lowest-highest over {runs} runs (1.00 = perfect grouping). Other columns: average per run.")
+    print(f"\nscore: lowest-highest over {runs} run(s) (1.00 = perfect grouping). Other columns: average per run.")
 
 if __name__ == "__main__":
     main()

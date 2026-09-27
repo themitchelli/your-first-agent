@@ -27,7 +27,23 @@ The last column is the useful one. Once code is split well, most changes touch o
 
 This post is different from the build posts. Most of the code already exists, and you'll *move* it rather than type it. The new code gets explained in full as usual. Moved code gets a sentence on why it moved.
 
-**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Coming back after a break? `my-first-agent` is in your home folder (Finder: Go > Home). A new terminal forgets both the virtual environment and the key, so switch the environment on again (`source .venv/bin/activate` on Mac, `.venv\Scripts\Activate.ps1` on Windows) and set the key again. Both are in the setup post, steps 4 and 7. Start from your production `agent.py`, the one in `my-first-agent` itself, or copy `lessons/06-production/agent.py` from the course files. If you did the harness post you now have two files called `agent.py`. Leave the copy inside `harness` alone until the last section of this post, and run every command from `my-first-agent`, not from `harness`. **Before you start, make a backup:** copy `agent.py` to `agent-single-file.py` (in the terminal, `cp agent.py agent-single-file.py` on Mac or `copy agent.py agent-single-file.py` on Windows), so you can compare if something breaks. Your finished files match `lessons/08-structure`.
+**Start of session:** VS Code open on `my-first-agent`, a new terminal, `(.venv)` showing, key set. If anything fails, the setup post's "When it goes wrong" section has the fixes. Coming back after a break? `my-first-agent` is in your home folder (Finder: Go > Home). A new terminal forgets both the virtual environment and the key, so switch the environment on again (`source .venv/bin/activate` on Mac, `.venv\Scripts\Activate.ps1` on Windows) and set the key again. Both are in the setup post, steps 4 and 7. Start from your production `agent.py`, the one in `my-first-agent` itself. If you're starting fresh from the course files instead, copy `agent.py`, `run.sh`, `run.bat` and `demo` from `lessons/06-production` into `my-first-agent`. For the last section you'll also need the harness: make a folder called `harness` inside `my-first-agent` and copy `harness.py`, `fixture` and `answer_key.json` from `lessons/07-swap-the-model` into it. If you did the harness post you now have two files called `agent.py`. Leave the copy inside `harness` alone until the last section of this post, and run every command from `my-first-agent`, not from `harness`. Your finished files match `lessons/08-structure`.
+
+**Before you start, make a backup.** Copy `agent.py` to `agent-single-file.py`, so you can compare if something breaks. From `my-first-agent`:
+
+**Mac**
+
+```bash
+cp agent.py agent-single-file.py
+```
+
+**Windows**
+
+```powershell
+copy agent.py agent-single-file.py
+```
+
+`agent-single-file.py` now shows in the sidebar, next to `agent.py`.
 
 **If you did the harness post, you haven't lost that work.** The seams you cut there went into a copy of the simple agent from the hands-and-memory post, which has no spend limit and no run log. This post starts from your production agent and gives it the same two seams properly: the plugged-in approver arrives in split 1, and the choice of model in split 3. In the last section you point the harness at the real agent and delete the copy.
 
@@ -49,7 +65,7 @@ which is why it is the easiest part of the agent to test.
 
 A description at the top of a file is a **module docstring**. With several files, it's how you remember what each one is for.
 
-Now **cut** everything under the `# ---- tools ----` header from `agent.py` and paste it into `tools.py`, header included: `list_files`, `safe_path`, `read_file`, `allowed`, `write_file`, `move_file`, the whole `TOOLS` list, and `run_tool`. One line in the middle of that block doesn't belong to the tools: `import anthropic`. Before you cut, move it up to the top of `agent.py`, under `import sys`. The tools don't need it, and it moves again in split 4.
+Now **cut** everything under the `# ---- tools ----` header from `agent.py` and paste it into `tools.py`: `list_files`, `safe_path`, `read_file`, `allowed`, `write_file`, `move_file`, the whole `TOOLS` list, and `run_tool`. One line in the middle of that block doesn't belong to the tools: `import anthropic`. Before you cut, move it up to the top of `agent.py`, under `import sys`. The tools don't need it, and it moves again in split 4.
 
 Save both files. From this post on you're editing several files at once, and the terminal only sees what's saved, so look for the white dot on each tab before you run anything (or turn on **File > Auto Save**). Then check the cut really happened: `agent.py` should now be about 130 lines, and its Outline should show no `list_files` or `run_tool`.
 
@@ -143,7 +159,7 @@ If you did the harness post, this is the same edit you made to the copy in `harn
 python -c "import pathlib, tools; print(tools.list_files(pathlib.Path('demo')))"
 ```
 
-Your demo files are listed. `import tools` loads your new file by name. Any `.py` file in the same folder can be imported this way, and that's all a module is.
+Your demo files are listed. `import tools` loads your new file by name. Any `.py` file in the same folder can be imported this way, and that's all a module is. `tools.py` is about 105 lines. Compare with `lessons/08-structure/tools.py`.
 
 ## Split 2: `runlog.py`, the record of what happened
 
@@ -166,7 +182,7 @@ import pathlib
 import subprocess
 ```
 
-Cut these settings from the top of `agent.py` and paste them under the imports:
+**Cut** these three settings from the top of `agent.py` and paste them under the imports. In `agent.py` they aren't all together: `MONTHLY_LIMIT_USD = 2.00` sits between `RUN_LOG` and `PRICE_PER_MILLION_USD`. Leave it where it is, along with `AUTO_APPROVE`. Both move in split 4.
 
 ```python
 HERE = pathlib.Path(__file__).parent
@@ -177,6 +193,14 @@ PRICE_PER_MILLION_USD = {"input": 1.00, "output": 5.00}     # Claude Haiku 4.5, 
 Then cut everything under `# ---- record keeping ----` from `agent.py`, `spent_this_month`, `code_version` and `finish`, and paste it below. The header can go; the file's docstring does its job now.
 
 One rename while you're here. The production post called the run's dictionary `run`. In the next split, the loop becomes a function called `run`, and one name for two different things is confusing. In `runlog.py`, rename the dictionary to `record`. VS Code can do it safely: in `finish`, right-click `run` on the `def finish(run, report):` line, choose **Rename Symbol** and type `record`. In `spent_this_month`, the loop variable `run` becomes `record` the same way.
+
+**Checkpoint (free):** save both files. In `runlog.py`, open Find (Cmd+F on Mac, Ctrl+F on Windows), type `run` and turn on **Match Whole Word** (the `ab` button in the Find box). You should see exactly two results: "the run log" in the docstring, and `subprocess.run` in `code_version`. Both are meant to be there. Any other match is a `run` the rename missed: change it to `record` by hand. `agent.py` should now be about 90 lines, with only `main` left in its Outline. Then, from `my-first-agent`:
+
+```bash
+python -c "import runlog; print(round(runlog.spent_this_month(), 4))"
+```
+
+You should see a number: what your agent has spent this month, in dollars, such as `0.0058`, or `0.0` if it hasn't run this month. It reads your real `runs.jsonl`, so it proves the moved code finds its log and the renamed loop works. If you see `NameError: name 'run' is not defined`, the rename missed one; Find shows where.
 
 ### 2b. One function to start a record
 
@@ -196,7 +220,7 @@ It's the same dictionary `main` used to build. Now the file that knows what a re
 python -c "import runlog; print(runlog.new_record('test'))"
 ```
 
-You should see one line starting `{'started': ` with today's date and time, `'task': 'test'`, a `'version'` (a short git ID, or `'unknown (not a git repo)'`), and `'result': 'ok'` at the end. Don't try running `agent.py` yet: it still calls functions that have just moved, so it won't work again until split 4. That's expected.
+You should see one line starting `{'started': ` with today's date and time, `'task': 'test'`, a `'version'` (a short git ID, or `'unknown (not a git repo)'`), and `'result': 'ok'` at the end. `runlog.py` is about 50 lines now. Compare with `lessons/08-structure/runlog.py`. Don't try running `agent.py` yet: it still calls functions that have just moved, so it won't work again until split 4. That's expected.
 
 If the last line says `ModuleNotFoundError: No module named 'runlog'`, Python can't find the file. Look at the name in the sidebar, character by character: it must be `runlog.py`, not `runlog,py` or `runlog.py.txt`, and it must sit in `my-first-agent`, next to `agent.py`.
 
@@ -249,7 +273,7 @@ The inputs are the point of this split. `run` is *given* everything it depends o
 - `record` and `report`: where to write down what happens. The loop fills them in *as it goes*, so if something crashes halfway, whoever called `run` still has everything that happened up to that point.
 - `model`: Haiku unless the caller says otherwise, as in the harness post.
 
-Then the loop itself. It's your loop from the production post with four small changes: `system=SYSTEM`, `tools=tools.TOOLS`, `record` instead of `run`, and `tools.run_tool(..., approve)`. Indented one step inside `run`:
+Then the loop itself. It's your loop from the production post with five small changes: `model=model`, `system=SYSTEM`, `tools=tools.TOOLS`, `record` instead of `run`, and `tools.run_tool(..., approve)`. It also sits one level shallower than before, because the `try` around it has gone. Put it below the `messages = ` line, indented one step inside `run`, four spaces, level with `messages`:
 
 ```python
     for _ in range(20):                     # safety cap: a confused agent can't loop forever
@@ -285,7 +309,7 @@ Then the loop itself. It's your loop from the production post with four small ch
 
 Notice what's *not* here: no `try`, no `sys.exit`, no spend limit, no `input()`. The loop doesn't decide what failure means or what a run may spend. That's the caller's job.
 
-`agent.py` is now under 50 lines, and most of them are the loop you wrote in the very first build post.
+`agent.py` is now under 50 lines, and most of them are the loop you wrote in the very first build post. Compare with `lessons/08-structure/agent.py`.
 
 **Checkpoint (free):** save `agent.py`, then from `my-first-agent`:
 
@@ -293,7 +317,7 @@ Notice what's *not* here: no `try`, no `sys.exit`, no spend limit, no `input()`.
 python -c "import agent; print(agent.run)"
 ```
 
-You should see `<function run at 0x...>`, with some number where the dots are. That proves the file loads and the loop is a function other files can call. It doesn't call the model: nothing runs until `main.py` exists. If you see `ModuleNotFoundError: No module named 'tools'`, `tools.py` from split 1 isn't saved next to `agent.py`. If you see `SyntaxError` or `IndentationError`, the last line names the line number to look at.
+You should see `<function run at 0x...>`, with some number where the dots are. That proves the file loads and the loop is a function other files can call. It doesn't call the model: nothing runs until `main.py` exists. If you see `ModuleNotFoundError: No module named 'tools'`, `tools.py` from split 1 isn't saved next to `agent.py`. If you see `SyntaxError` or `IndentationError`, the last line names the line number to look at. If you see `NameError: name 'client' is not defined`, the loop is at the left margin, outside `run`: select the whole loop and press Tab once to indent it four spaces.
 
 ## Split 4: `main.py`, how the agent gets started
 
@@ -367,7 +391,15 @@ The whole run is now one line: `agent.run(client, workspace, task, approve, reco
 
 Finally, point the scheduler at the new entry point. In `run.sh` (or `run.bat`), change `agent.py` to `main.py`.
 
-**Checkpoint:** run it as the scheduler would:
+**Checkpoint (free):** save `main.py`, then from `my-first-agent`:
+
+```bash
+python -c "import main; print(main.main)"
+```
+
+You should see `<function main at 0x...>`. That proves `main.py` and every file it imports load, before you pay for anything. `main.py` is about 45 lines. Compare with `lessons/08-structure/main.py`.
+
+**Checkpoint:** then, from `my-first-agent`, run it as the scheduler would:
 
 ```bash
 python main.py demo "Organise any new files in this folder the same way as before." --auto-approve
@@ -381,7 +413,7 @@ Here's the pain that justified the whole exercise. Until now, the only way to ch
 
 Now you can. `agent.run` accepts *any* client. So we hand it a fake one that plays back replies we wrote in advance.
 
-Create `test_agent.py`:
+Create `test_agent.py`. It's built in seven parts. Each part goes at the bottom of the file, below the one before it, starting at the left margin with a blank line in between. Start with:
 
 ```python
 """Tests that run the whole agent without the API: free, fast, and the same every time.
@@ -514,11 +546,13 @@ if __name__ == "__main__":
 
 `globals()` holds everything defined in this file. The first line collects every function whose name starts with `test_`, and the loop runs each one. If any `assert` fails, Python stops with an error that names the line. (Professional projects use a test runner called pytest, which does this and much more. This tiny version needs nothing installed.)
 
+Save `test_agent.py`. It's about 80 lines; compare with `lessons/08-structure/test_agent.py`. Then, from `my-first-agent`:
+
 ```bash
 python test_agent.py
 ```
 
-**Checkpoint: three "passed" lines, then "All 3 tests passed. No API calls, no cost."** It takes under a second.
+**Checkpoint: three "passed" lines, then "All 3 tests passed. No API calls, no cost."** It takes under a second. Between the second and third "passed" lines you'll also see `[tool] move_file` and `Moved the recipe.`. That's the real loop printing as it works, fed by the fake client.
 
 Now break something on purpose. In `agent.py`, change `"tool_use_id": block.id,` to `"tool_use_id": "wrong",` and run the tests again. Test 3 fails. Put it back. That's a mistake that would have cost you a confusing API error, and possibly an hour, and now it costs one second and nothing.
 
@@ -538,9 +572,9 @@ In the sidebar, drag `harness.py`, `fixture` and `answer_key.json` out of the `h
 python -c "import harness; print(harness.grouping_score)"
 ```
 
-You should see `<function grouping_score at 0x...>`. If the last line says `AttributeError: module 'harness' has no attribute 'grouping_score'`, the `harness` folder is still there. Python found the folder before the file. Delete the folder and run it again.
+You should see `<function grouping_score at 0x...>`. If the last line says `AttributeError: module 'harness' has no attribute 'grouping_score'`, `harness.py` is still inside the `harness` folder, so Python found the folder instead of the file. Don't delete anything yet. Drag `harness.py`, `fixture` and `answer_key.json` into `my-first-agent`, check all three show there in the sidebar, then delete the `harness` folder and run the check again. If it says `ModuleNotFoundError: No module named 'harness'`, the folder was deleted before `harness.py` came out of it: copy `harness.py`, `fixture` and `answer_key.json` from `lessons/07-swap-the-model` in the course files into `my-first-agent`.
 
-**Don't run the harness yet.** It still has the old `run_once`, which calls the copy you just deleted. The next section changes it, and the checkpoint at the end of this section runs it.
+**Don't run the harness yet.** It still has the old `run_once`, shaped for the copy. It now finds your real `agent.py`, and run now it stops with `TypeError: run() got an unexpected keyword argument 'quiet'`. The next section changes it, and the checkpoint at the end of this section runs it.
 
 ### Give it a client and a record
 
@@ -592,14 +626,14 @@ to:
         results = [run_once(client, model, answer_key) for _ in range(runs)]
 ```
 
-Last, at the top of the file, add `import anthropic` on its own line above `import agent`.
+Last, at the top of the file, add `import anthropic` on its own line above `import agent`. Save `harness.py`. It's about 100 lines; compare with `lessons/08-structure/harness.py`.
 
-One honest note. Harness runs go through `agent.run` and never through `main.py`, so they're not written to `runs.jsonl` and don't count towards the monthly limit. That's right, because they're tests, not the agent's work, but it means the console spend limit from the production post is the only thing capping them. Check it's set.
+One honest note. Harness runs go through `agent.run` and never through `main.py`, so they're not written to `runs.jsonl` and don't count towards the monthly limit. That's right, because they're tests, not the agent's work, but it means the spend limit in the Anthropic console is the only thing capping them. Check it's set: the production post's "Question 3: what can it spend?" section, under "Fix 1 costs no code", shows where it lives.
 
 **Checkpoint:** the free test first, then the real one. Both from `my-first-agent`:
 
 ```bash
-python -c "import json, harness as h; k = json.load(open('answer_key.json')); perfect = {n: g for g, ns in k.items() for n in ns}; print(h.grouping_score(perfect, k))"
+python -c "import json, harness as h; k = json.load(open('answer_key.json', encoding='utf-8')); perfect = {n: g for g, ns in k.items() for n in ns}; print(h.grouping_score(perfect, k))"
 python harness.py 1
 ```
 
@@ -621,7 +655,7 @@ The last line of the error is the one that matters.
 
 **`ModuleNotFoundError: No module named 'runlog'`** (or `'tools'`, or `'agent'`). The file isn't where Python looks, or its name is wrong. Every file in this post sits directly in `my-first-agent`, and every command runs from there. Check the name in the sidebar character by character: a comma instead of a dot, or a hidden `.txt` on the end, looks almost right.
 
-**`AttributeError: module 'harness' has no attribute 'grouping_score'`**. There's still a folder called `harness`, and Python found it instead of `harness.py`. Finish "Move the harness home" and delete the folder.
+**`AttributeError: module 'harness' has no attribute 'grouping_score'`**. `harness.py` is still inside the `harness` folder, and Python found the folder instead of the file. Don't delete the folder yet: it holds your harness. Drag `harness.py`, `fixture` and `answer_key.json` into `my-first-agent` first, then delete the folder. "Move the harness home" has the steps.
 
 **`NameError: name 'code_version' is not defined`** (or another function that moved) when you run `agent.py` in the middle of the post. Expected between split 2 and split 4: the functions have moved and nothing calls them from the new place yet. From split 4 on, run `main.py`, not `agent.py`.
 

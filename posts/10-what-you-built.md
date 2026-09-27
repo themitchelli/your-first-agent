@@ -3,9 +3,9 @@
 
 # What you built
 
-In the build post you had a Python file that could look at a folder and talk about it. It was about 70 lines, and the part that made it an agent was a loop of about 30.
+In the build post you had a Python file that could look at a folder and talk about it. It was about 70 lines, and the part that made it an agent was a loop of about 25.
 
-Today you have an agent that tidies a folder every morning while you sleep. It asks before it changes anything, unless you've told it not to, and it can't reach outside its folder even if it wants to. It remembers what it did last time. It writes down every run, which agent ran it and what it cost, and refuses to start when the month's money is spent. It has seven tests that run in under a second and cost nothing, a harness that scores it against three models, and a register that says what it is and complains when that stops being true.
+Today you have an agent that tidies a folder every morning while you sleep. It asks before it changes anything, unless you've told it not to, and it can't reach outside its folder even if it wants to. It remembers what it did last time. It writes down every run, which agent ran it and what it cost, and refuses to start when the month's money is spent. It has seven tests that run in about a second and cost nothing, a harness that scores it against three models, and a register that says what it is and complains when that stops being true.
 
 This post has no new code. It's here so you can see what you did.
 
@@ -43,7 +43,7 @@ You can tell whether a change helped instead of guessing. You've seen a model sc
 
 You can test an agent for free, with a fake model that plays back replies you wrote.
 
-And you can say no to an agent. The first post's ladder, existing tool, script, one AI call, agent, is still the most useful thing in the series. The best agent is often the one you didn't need to build.
+And you can say no to an agent. The first post's right-tool check (existing tool, script, one AI call, agent) is still the most useful thing in the series. The best agent is often the one you didn't need to build.
 
 ## Back to your sentence
 
@@ -51,7 +51,7 @@ At the end of the first post you wrote one sentence: "I want an agent that ___ e
 
 You now have everything you need to build it. Here's the order, and each step is something you've already done once:
 
-1. **Copy `my-first-agent`** to a new folder with a new name. Delete `demo`, `runs.jsonl`, `reports` and `memory.md` from the copy. Then give the copy **a new id** in `register.json`, with the same `uuid` command as the register post. A copy with the old id would stamp its runs as the file organiser's.
+1. **Copy `my-first-agent`** to a new folder with a new name. Delete `.venv`, `demo`, `runs.jsonl`, `reports` and `memory.md` from the copy. A copied `.venv` still points at the old folder, so make a fresh one in the copy with steps 4 and 5 of the setup post. Then give the copy **a new id** in `register.json`, with the same `uuid` command as the register post. A copy with the old id would stamp its runs as the file organiser's.
 2. **Write the tools your job needs** in `tools.py`. Use the recipe from the hands-and-memory post: write the function, describe it in `TOOLS`, route it in `run_tool`. Anything that changes something gets an approval. Delete the tools your job doesn't need. An agent should have no tool it doesn't use.
 3. **Rewrite `SYSTEM`** in `agent.py` for your job.
 4. **Update the tests.** Keep the fence test and the "no means no" test, pointed at your new tools. Test 3 needs new scripted replies.
